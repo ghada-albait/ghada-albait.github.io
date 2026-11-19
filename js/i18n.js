@@ -1,6 +1,7 @@
 // Interface translations (ar, en, hi, bn, fil)
 export const I18N = {
 "ar": {
+"menuEdited": "تم تعديل المنيو",
 "notifOn": "تفعيل التنبيهات",
 "notifIsOn": "التنبيهات مفعّلة على هذا الجهاز",
 "notifHint": "ليصلك تنبيه عند المنيو والنواقص والرسائل",
@@ -143,6 +144,7 @@ export const I18N = {
 "toTop": "للأعلى"
 },
 "en": {
+"menuEdited": "Menu changed",
 "notifOn": "Turn on notifications",
 "notifIsOn": "Notifications are on for this device",
 "notifHint": "Get alerts for the menu, shopping list and messages",
@@ -285,6 +287,7 @@ export const I18N = {
 "toTop": "To top"
 },
 "hi": {
+"menuEdited": "मेनू बदला गया",
 "notifOn": "सूचनाएं चालू करें",
 "notifIsOn": "इस डिवाइस पर सूचनाएं चालू हैं",
 "notifHint": "मेनू, खरीदारी सूची और संदेशों की सूचना पाएं",
@@ -427,6 +430,7 @@ export const I18N = {
 "toTop": "ऊपर"
 },
 "bn": {
+"menuEdited": "মেনু পরিবর্তন হয়েছে",
 "notifOn": "নোটিফিকেশন চালু করুন",
 "notifIsOn": "এই ডিভাইসে নোটিফিকেশন চালু আছে",
 "notifHint": "মেনু, কেনাকাটার তালিকা ও বার্তার নোটিফিকেশন পান",
@@ -569,6 +573,7 @@ export const I18N = {
 "toTop": "উপরে"
 },
 "fil": {
+"menuEdited": "Binago ang menu",
 "notifOn": "I-on ang notifications",
 "notifIsOn": "Naka-on ang notifications sa device na ito",
 "notifHint": "Makatanggap ng alerto sa menu, listahan at mensahe",
@@ -711,6 +716,7 @@ export const I18N = {
 "toTop": "Itaas"
 },
 "te": {
+"menuEdited": "మెనూ మార్చబడింది",
 "notifOn": "నోటిఫికేషన్లు ఆన్ చేయండి",
 "notifIsOn": "ఈ ఫోన్‌లో నోటిఫికేషన్లు ఆన్‌లో ఉన్నాయి",
 "notifHint": "మెనూ, కొనుగోలు జాబితా, సందేశాల నోటిఫికేషన్లు పొందండి",

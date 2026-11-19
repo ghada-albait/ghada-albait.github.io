@@ -3,10 +3,10 @@ import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.2/fireba
 import { getAuth, signInAnonymously, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
 import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager, doc, getDoc, setDoc, updateDoc, deleteDoc, collection, addDoc, onSnapshot, query, where, orderBy, limit, writeBatch } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 import { getMessaging, getToken, onMessage, isSupported as fcmSupported } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-messaging.js';
-import { firebaseConfig, vapidKey } from './firebase-config.js?v=16';
-import { I18N, QUICK_NOTES } from './i18n.js?v=16';
-import { DISHES, ITEMS } from './seed.js?v=16';
-import { HELP } from './help.js?v=16';
+import { firebaseConfig, vapidKey } from './firebase-config.js?v=17';
+import { I18N, QUICK_NOTES } from './i18n.js?v=17';
+import { DISHES, ITEMS } from './seed.js?v=17';
+import { HELP } from './help.js?v=17';
 
 const fbApp = initializeApp(firebaseConfig);
 const auth = getAuth(fbApp);
@@ -28,7 +28,7 @@ const LANGS = {
   en: { dir: 'ltr', loc: 'en-GB', label: 'English', gt: 'en' }
 };
 const WD_AR = ['الأحد', 'الاثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة', 'السبت'];
-const DEF = { counts: { main: 1, rice: 0, side: 1, salad: 1, soup: 0, dessert: 0 }, noRepeat: 10, horizon: 14, offDays: [] };
+const DEF = { notifyEve: 19, notifyMorning: 8, counts: { main: 1, rice: 0, side: 1, salad: 1, soup: 0, dessert: 0 }, noRepeat: 10, horizon: 14, offDays: [] };
 const ROLE_AR = { admin: 'الإدارة', family: 'العائلة', cook: 'الطباخ', driver: 'السائق' };
 const ICON = `<svg viewBox="0 0 100 100" aria-hidden="true"><g fill="none" stroke="#F3B35E" stroke-width="5" stroke-linecap="round"><path d="M38 29c-5-5 5-8 0-15"/><path d="M50 27c-5-5 5-8 0-15"/><path d="M62 29c-5-5 5-8 0-15"/></g><g fill="#FFF4E8"><circle cx="50" cy="37" r="4"/><path d="M24 50a26 12 0 0 1 52 0z"/><rect x="18" y="50" width="64" height="6" rx="3"/><path d="M24 58h52v8a14 14 0 0 1-14 14H38a14 14 0 0 1-14-14z"/><rect x="11" y="60" width="11" height="5" rx="2.5"/><rect x="78" y="60" width="11" height="5" rx="2.5"/></g><rect x="24" y="64" width="52" height="3.5" fill="#F3B35E"/></svg>`;
 const IC = (d, extra) => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${d}</svg>`;
@@ -412,6 +412,8 @@ function adminSettings() {
   let h = `<div class="sec"><h2>رموز الدخول</h2></div><div class="card flat">` + ROLES.map(r => `<div class="row"><div class="grow"><div class="nm">${ROLE_AR[r]}</div><div class="meta">${ps[r] ? '✓ الرمز محدد' : 'لم يُحدد بعد'}</div></div><button class="sm ${ps[r] ? 'ghost' : ''}" data-act="setPin" data-v="${r}">${ps[r] ? 'تغيير' : 'تحديد'}</button>${ps[r] && r !== 'admin' ? `<button class="sm soft" data-act="invite" data-v="${r}">دعوة</button>` : ''}</div>`).join('') + `<p class="small mute" style="margin:8px 0 0">رمز البيت: <b dir="ltr">${esc(S.hid)}</b> · اجعل رمز كل دور مختلفاً.</p></div>`;
   h += `<div class="sec"><h2>الأجهزة الداخلة</h2></div><div class="card flat" style="padding:2px 14px">${S.members.map(m => `<div class="row${m.id !== S.uid ? ' sw' : ''}" data-sw="kick" data-id="${m.id}"><div class="grow"><div class="nm">${ROLE_AR[m.role] || m.role}${m.id === S.uid ? ' (هذا الجهاز)' : ''}</div><div class="meta"><bdi>${esc(LANGS[m.lang] ? LANGS[m.lang].label : '')}</bdi> · ${m.joinedAt ? `<bdi>${esc(new Date(m.joinedAt).toLocaleString('ar-KW-u-nu-latn', { day: 'numeric', month: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' }))}</bdi>` : ''}</div></div>${m.id !== S.uid ? `${delBtn('k' + m.id, 'kick', m.id)}` : ''}</div>`).join('') || '<div class="empty">—</div>'}</div><p class="small mute" style="margin:4px 2px">لإخراج شخص نهائياً: احذف جهازه ثم غيّر رمز دوره.</p>`;
   h += `<div class="sec"><h2>تركيبة الغداء اليومي</h2></div><div class="card flat">` + CATS.map(c => `<div class="row"><div class="grow nm" style="font-size:15px">${esc(t('c_' + c))}${c === 'rice' ? '<div class="meta">يُضاف تلقائياً مع المرق والمشاوي</div>' : ''}</div><select data-s="count_${c}" style="width:120px">${[0, 1, 2, 3].map(n => `<option value="${n}" ${st.counts[c] == n ? 'selected' : ''}>${n === 0 ? (c === 'rice' ? 'تلقائي' : 'بدون') : n}</option>`).join('')}</select></div>`).join('') + `</div>`;
+  const hrs = (k, v, off) => `<select data-s="${k}">${off ? `<option value="-1" ${v < 0 ? 'selected' : ''}>بدون</option>` : ''}${Array.from({ length: 24 }, (_, i) => i).map(i => `<option value="${i}" ${+v === i ? 'selected' : ''}>${i === 0 ? '12 ص' : i < 12 ? i + ' ص' : i === 12 ? '12 ظ' : (i - 12) + ' م'}</option>`).join('')}</select>`;
+  h += `<div class="sec"><h2>🔔 تنبيهات الطباخ</h2></div><div class="card flat"><div class="row"><div class="grow"><div class="nm" style="font-size:15px">منيو بكرة (قبلها بيوم)</div><div class="meta">يصل للطباخ بلغته</div></div><div style="width:120px">${hrs('notifyEve', st.notifyEve)}</div></div><div class="row"><div class="grow"><div class="nm" style="font-size:15px">تذكير صباحي بمنيو اليوم</div></div><div style="width:120px">${hrs('notifyMorning', st.notifyMorning, true)}</div></div><p class="small mute" style="margin:6px 0 0">وإذا عدّلت منيو اليوم أو بكرة بعد إرساله، يصل للطباخ تنبيه بالتعديل. احفظ بالزر أسفل الإعدادات.</p></div>`;
   h += `<div class="card flat"><div class="field" style="margin-top:0"><label>عدم تكرار الطبق الرئيسي قبل (أيام)</label><input data-s="noRepeat" type="number" min="1" max="60" value="${esc(st.noRepeat)}"></div><div class="field"><label>تجهيز المنيو مسبقاً لعدد أيام</label><input data-s="horizon" type="number" min="3" max="30" value="${esc(st.horizon)}"></div><div class="field"><label>أيام بدون غداء في البيت</label>${WD_AR.map((w, i) => `<label class="chk"><input type="checkbox" data-s="off_${i}" ${(st.offDays || []).includes(i) ? 'checked' : ''}><span>${w}</span></label>`).join('')}</div><button class="block" data-act="saveSettings">حفظ الإعدادات</button></div>`;
   h += `<div class="card flat"><button class="ghost block" data-act="logout">${confirmKey === 'logout' ? 'اضغط مرة أخرى للخروج' : 'خروج من هذا الجهاز'}</button></div>`;
   return h;
@@ -733,7 +735,7 @@ const ACT = {
   async saveDay() {
     M.busy = true; renderModal();
     const note = (M.note || '').trim(), changed = JSON.stringify([M.items, !!M.off, note, M.notes]) !== M.orig;
-    try { await setDoc(H('menu', M.date), { date: M.date, items: M.off ? {} : M.items, off: !!M.off, note, notes: M.notes, auto: false, seen: changed ? null : M.seen }); const fm = M.fromMsg; toast('تم الحفظ'); closeModal(); if (fm) updateDoc(H('messages', fm), { status: 'done', doneAt: Date.now(), reply: 'تمت إضافته للمنيو ✓', replyAt: Date.now() }).catch(() => {}); }
+    try { await setDoc(H('menu', M.date), { editedAt: Date.now(), date: M.date, items: M.off ? {} : M.items, off: !!M.off, note, notes: M.notes, auto: false, seen: changed ? null : M.seen }); const fm = M.fromMsg; toast('تم الحفظ'); closeModal(); if (fm) updateDoc(H('messages', fm), { status: 'done', doneAt: Date.now(), reply: 'تمت إضافته للمنيو ✓', replyAt: Date.now() }).catch(() => {}); }
     catch (e) { M.busy = false; renderModal(); toast(errMsg(e)); }
   },
   async regen() {
@@ -820,7 +822,7 @@ const ACT = {
     const q = k => $app.querySelector(`[data-s="${k}"]`);
     const counts = {}; CATS.forEach(c => { counts[c] = +q('count_' + c).value; });
     const offDays = []; for (let i = 0; i < 7; i++) if (q('off_' + i).checked) offDays.push(i);
-    const s = { counts, noRepeat: Math.max(1, Math.min(60, +q('noRepeat').value || 10)), horizon: Math.max(3, Math.min(30, +q('horizon').value || 14)), offDays };
+    const s = { notifyEve: +q('notifyEve').value, notifyMorning: +q('notifyMorning').value, counts, noRepeat: Math.max(1, Math.min(60, +q('noRepeat').value || 10)), horizon: Math.max(3, Math.min(30, +q('horizon').value || 14)), offDays };
     if (document.activeElement) document.activeElement.blur();
     await updateDoc(H(), { settings: s }); toast('تم الحفظ. استخدم "إعادة توليد" لتطبيقها على الأيام التلقائية'); genDone = false; maybeGenerate();
   }
@@ -889,7 +891,7 @@ onAuthStateChanged(auth, async u => {
 });
 if ('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js').then(r => { document.addEventListener('visibilitychange', () => { if (!document.hidden) r.update().catch(() => { }); }); }).catch(() => { });
 /* --- update check: compare baked version with version.json --- */
-const APP_V = '16';
+const APP_V = '17';
 let updShown = false;
 function checkUpdate() {
   if (updShown) return;

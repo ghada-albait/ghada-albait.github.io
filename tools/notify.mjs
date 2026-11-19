@@ -12,7 +12,6 @@ const tl = (l, k) => (I18N[l] && I18N[l][k]) || I18N.en[k] || k;
 const nm = (o, l) => !o ? '' : (o.custom || o['name_' + l] || o.name_en || o.name_ar || '').replace(/\s*\(.*\)\s*$/, '');
 const kwt = d => new Date(d.getTime() + 3 * 3600e3); // Kuwait time (UTC+3, no DST)
 const dayKey = d => kwt(d).toISOString().slice(0, 10);
-const DAILY_HOUR = 9; // cook gets today's menu at 9:00 Kuwait time
 
 async function send(tokDocs, build, tag) {
   let n = 0;
@@ -56,17 +55,29 @@ async function household(h) {
   // 3) new shortages -> driver
   const sh = (await h.ref.collection('shortages').where('createdAt', '>', last).get()).docs.map(d => d.data()).filter(s => s.createdAt <= now);
   if (sh.length) sent += await send(byRole('driver'), l => ({ title: '🛒 ' + tl(l, 'toBuy') + ' (' + sh.length + ')', body: sh.map(s => nm((s.itemId && items[s.itemId]) || s, l) + ' × ' + s.qty + ' ' + tl(l, 'u_' + s.unit)).join('، ') }), 'short');
-  // 4) daily menu -> cook (once a day after DAILY_HOUR)
-  const today = dayKey(new Date(now)), hour = kwt(new Date(now)).getUTCHours();
-  if (hour >= DAILY_HOUR && meta.daily !== today) {
-    const m = (await h.ref.collection('menu').doc(today).get()).data();
-    if (m && !m.off) {
-      const CATS = ['main', 'rice', 'side', 'salad', 'soup', 'dessert'];
-      const list = l => CATS.flatMap(c => ((m.items || {})[c] || []).map(id => nm(dishes[id], l))).filter(Boolean).join(' + ');
-      sent += await send(byRole('cook'), l => ({ title: '🍽️ ' + tl(l, 'today'), body: list(l) }), 'menu');
-    }
-    await metaRef.set({ daily: today }, { merge: true });
+  // 4) menu for the cook: tomorrow's menu the evening before, optional morning reminder, and edits
+  const st = Object.assign({ notifyEve: 19, notifyMorning: 8 }, (h.data().settings || {}));
+  const nowK = kwt(new Date(now)), hour = nowK.getUTCHours(), today = nowK.toISOString().slice(0, 10);
+  const tomorrow = new Date(Date.UTC(nowK.getUTCFullYear(), nowK.getUTCMonth(), nowK.getUTCDate() + 1)).toISOString().slice(0, 10);
+  const CATS = ['main', 'rice', 'side', 'salad', 'soup', 'dessert'];
+  const menuOf = async d => (await h.ref.collection('menu').doc(d).get()).data();
+  const list = (m, l) => m.off ? '🚫 ' + tl(l, 'noLunch') : CATS.flatMap(c => ((m.items || {})[c] || []).map(id => nm(dishes[id], l))).filter(Boolean).join(' + ');
+  const cooks = byRole('cook'), upd = {};
+  if (st.notifyEve >= 0 && hour >= st.notifyEve && meta.eve !== tomorrow) {
+    const m = await menuOf(tomorrow);
+    if (m) sent += await send(cooks, l => ({ title: '🍽️ ' + tl(l, 'tomorrow'), body: list(m, l) }), 'menu-' + tomorrow);
+    upd.eve = tomorrow;
   }
+  if (st.notifyMorning >= 0 && hour >= st.notifyMorning && hour < st.notifyMorning + 3 && meta.morning !== today) {
+    const m = await menuOf(today);
+    if (m && !m.off) sent += await send(cooks, l => ({ title: '🍽️ ' + tl(l, 'today'), body: list(m, l) }), 'menu-' + today);
+    upd.morning = today;
+  }
+  for (const d of [today, tomorrow]) {
+    const m = await menuOf(d), already = d === today ? true : meta.eve === tomorrow || upd.eve === tomorrow;
+    if (m && m.editedAt > last && m.editedAt <= now && already) sent += await send(cooks, l => ({ title: '✏️ ' + tl(l, 'menuEdited') + ' · ' + tl(l, d === today ? 'today' : 'tomorrow'), body: list(m, l) }), 'menu-' + d);
+  }
+  if (Object.keys(upd).length) await metaRef.set(upd, { merge: true });
   await metaRef.set({ lastRun: now }, { merge: true });
   return sent;
 }
