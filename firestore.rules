@@ -53,7 +53,7 @@ service cloud.firestore {
 
       match /shortages/{id} {
         allow read: if hasRole(h, ['admin', 'cook', 'driver']);
-        allow create: if hasRole(h, ['admin', 'cook']);
+        allow create: if hasRole(h, ['admin', 'cook', 'driver']);
         allow update: if isAdmin(h);
         allow delete: if hasRole(h, ['admin', 'cook', 'driver']);
       }

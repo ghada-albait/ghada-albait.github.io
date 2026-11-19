@@ -1661,5 +1661,117 @@ export const ITEMS = [
 "name_te": "అల్యూమినియం ఫాయిల్",
 "unit": "pcs",
 "emoji": "🥡"
+},
+{
+"id": "laundry",
+"name_ar": "مسحوق غسيل",
+"name_en": "Laundry detergent",
+"name_hi": "कपड़े धोने का पाउडर",
+"name_bn": "কাপড় কাচার পাউডার",
+"name_fil": "Sabong panlaba",
+"name_te": "బట్టల సబ్బు పొడి",
+"unit": "pack",
+"emoji": "🧺"
+},
+{
+"id": "toilet-paper",
+"name_ar": "ورق تواليت",
+"name_en": "Toilet paper",
+"name_hi": "टॉयलेट पेपर",
+"name_bn": "টয়লেট পেপার",
+"name_fil": "Toilet paper",
+"name_te": "టాయిలెట్ పేపర్",
+"unit": "pack",
+"emoji": "🧻"
+},
+{
+"id": "floor-cleaner",
+"name_ar": "منظف أرضيات",
+"name_en": "Floor cleaner",
+"name_hi": "फ़र्श साफ़ करने का लिक्विड",
+"name_bn": "মেঝে পরিষ্কারের লিকুইড",
+"name_fil": "Panlinis ng sahig",
+"name_te": "నేల శుభ్రం చేసే ద్రవం",
+"unit": "bottle",
+"emoji": "🧴"
+},
+{
+"id": "bleach",
+"name_ar": "كلوركس",
+"name_en": "Bleach (Clorox)",
+"name_hi": "ब्लीच (क्लोरॉक्स)",
+"name_bn": "ব্লিচ (ক্লোরক্স)",
+"name_fil": "Bleach (Clorox)",
+"name_te": "బ్లీచ్ (క్లోరాక్స్)",
+"unit": "bottle",
+"emoji": "🧪"
+},
+{
+"id": "sponge",
+"name_ar": "إسفنج جلي",
+"name_en": "Dish sponges",
+"name_hi": "बर्तन धोने का स्पंज",
+"name_bn": "বাসন মাজার স্পঞ্জ",
+"name_fil": "Espongha panghugas",
+"name_te": "గిన్నెల స్పాంజ్",
+"unit": "pack",
+"emoji": "🧽"
+},
+{
+"id": "hand-soap",
+"name_ar": "صابون يدين",
+"name_en": "Hand soap",
+"name_hi": "हाथ धोने का साबुन",
+"name_bn": "হাত ধোয়ার সাবান",
+"name_fil": "Sabong pangkamay",
+"name_te": "చేతుల సబ్బు",
+"unit": "bottle",
+"emoji": "🧼"
+},
+{
+"id": "cling-film",
+"name_ar": "نايلون تغليف",
+"name_en": "Cling film",
+"name_hi": "क्लिंग फिल्म",
+"name_bn": "ক্লিং ফিল্ম",
+"name_fil": "Cling wrap",
+"name_te": "క్లింగ్ ఫిల్మ్",
+"unit": "pcs",
+"emoji": "📜"
+},
+{
+"id": "gas",
+"name_ar": "غاز طبخ (أسطوانة)",
+"name_en": "Cooking gas cylinder",
+"name_hi": "खाना पकाने की गैस (सिलेंडर)",
+"name_bn": "রান্নার গ্যাস (সিলিন্ডার)",
+"name_fil": "Gasul (LPG)",
+"name_te": "వంట గ్యాస్ (సిలిండర్)",
+"unit": "pcs",
+"emoji": "🔥"
+},
+{
+"id": "bulbs",
+"name_ar": "لمبات",
+"name_en": "Light bulbs",
+"name_hi": "बल्ब",
+"name_bn": "বাল্ব",
+"name_fil": "Bombilya",
+"name_te": "బల్బులు",
+"unit": "pcs",
+"emoji": "💡"
+},
+{
+"id": "batteries",
+"name_ar": "بطاريات",
+"name_en": "Batteries",
+"name_hi": "बैटरी",
+"name_bn": "ব্যাটারি",
+"name_fil": "Baterya",
+"name_te": "బ్యాటరీలు",
+"unit": "pack",
+"emoji": "🔋"
 }
 ];
+export const SEED_ITEMS_V = 2;
+export const NEW_ITEMS_V2 = ["laundry", "toilet-paper", "floor-cleaner", "bleach", "sponge", "hand-soap", "cling-film", "gas", "bulbs", "batteries"];

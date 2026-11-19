@@ -3,10 +3,10 @@ import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.2/fireba
 import { getAuth, signInAnonymously, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
 import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager, doc, getDoc, setDoc, updateDoc, deleteDoc, collection, addDoc, onSnapshot, query, where, orderBy, limit, writeBatch } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 import { getMessaging, getToken, onMessage, isSupported as fcmSupported } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-messaging.js';
-import { firebaseConfig, vapidKey } from './firebase-config.js?v=18';
-import { I18N, QUICK_NOTES } from './i18n.js?v=18';
-import { DISHES, ITEMS } from './seed.js?v=18';
-import { HELP } from './help.js?v=18';
+import { firebaseConfig, vapidKey } from './firebase-config.js?v=19';
+import { I18N, QUICK_NOTES } from './i18n.js?v=19';
+import { DISHES, ITEMS, SEED_ITEMS_V, NEW_ITEMS_V2 } from './seed.js?v=19';
+import { HELP } from './help.js?v=19';
 
 const fbApp = initializeApp(firebaseConfig);
 const auth = getAuth(fbApp);
@@ -224,7 +224,7 @@ function notifBlock() {
 let fcm = null;
 async function enablePush(ask) {
   try {
-    if (!S.uid || !S.hid || !S.role) return;
+    if (!S.uid || !S.hid || !S.role || !('Notification' in window)) { if (ask && !('Notification' in window)) toast(isIOS && !standalone() ? t('notifIos') : t('notifNA')); return; }
     if (!(await fcmSupported())) { if (ask) toast(isIOS && !standalone() ? t('notifIos') : t('notifNA')); return; }
     if (Notification.permission === 'default' && ask) { const p = await Notification.requestPermission(); if (p !== 'granted') { if (ask) toast(t('notifBlocked')); return; } }
     if (Notification.permission !== 'granted') return;
@@ -352,7 +352,7 @@ function shortRow(s, mode) {
   const o = (s.itemId && S.items[s.itemId]) || s;
   let act = '';
   if (mode === 'driver' || mode === 'admin') act += `<button class="sm" data-act="buy" data-id="${s.id}">${esc(t('markBought'))}</button>`;
-  if (mode === 'cook' || mode === 'admin') act += `<button class="icon" data-act="delShort" data-id="${s.id}" aria-label="${esc(t('del'))}">✕</button>`;
+  if (mode === 'cook' || mode === 'admin' || (mode === 'driver' && s.by === 'driver')) act += `<button class="icon" data-act="delShort" data-id="${s.id}" aria-label="${esc(t('del'))}">✕</button>`;
   return `<div class="row" data-sg="short" data-key="${keyOf(o)}"><div class="thumb ph"><span class="emo">${esc(o.emoji || '🛒')}</span></div><div class="grow"><div class="nm">${esc(nm(o))}</div><div class="meta">${esc(s.qty)} ${esc(unitL(s.unit))}${L() !== 'ar' && !s.custom ? ' · ' + esc(o.name_ar || '') : ''}${s.note ? ' · ' + esc(s.note) : ''}</div></div>${act}</div>`;
 }
 function shortList(mode) {
@@ -364,7 +364,7 @@ function driverView() {
   const tp = S.purchases.filter(p => p.date === today()); const tot = tp.reduce((a, p) => a + (Number(p.price) || 0), 0);
   let h = `<div class="summary"><div style="display:flex;align-items:baseline;gap:8px"><span class="big-n">${S.shortages.length}</span><span>${esc(t('toBuy'))}</span></div>${S.shortages.length ? `<button class="sm" data-act="shareList">${esc(t('share'))}</button>` : ''}</div>`;
   if (S.shortages.length > 6) h += searchBox('short', t('search'));
-  h += shortList('driver') + `<button class="ghost block" data-act="extraBuy">+ ${esc(t('extraPurchase'))}</button>`;
+  h += `<button class="block soft" data-act="addShort" style="margin-top:12px">+ ${esc(t('addMissing'))}</button>` + shortList('driver') + `<button class="ghost block" data-act="extraBuy">+ ${esc(t('extraPurchase'))}</button>`;
   h += `<div class="sec"><h2>${esc(t('boughtToday'))}</h2>${tp.length ? `<span class="badge">${esc(t('total'))}: ${money(tot)} ${esc(t('kwd'))}</span>` : ''}</div>`;
   h += tp.length ? `<div class="card flat" style="padding:2px 14px">${tp.map(p => { const o = (p.itemId && S.items[p.itemId]) || p; return `<div class="row"><div class="thumb ph"><span class="emo">${esc(o.emoji || '🛒')}</span></div><div class="grow"><div class="nm">${esc(nm(o))}</div><div class="meta">${esc(p.qty)} ${esc(unitL(p.unit))} · ${esc(storeL(p.store))}</div></div><b>${money(p.price)}</b></div>`; }).join('')}</div>` : `<div class="card empty">—</div>`;
   return h;
@@ -661,7 +661,7 @@ const ACT = {
     if (!/^\d{6}$/.test(p1)) return toast('رمز الإدارة 6 أرقام'); if (p1 !== p2) return toast('الرمزان غير متطابقين');
     el.disabled = true; el.innerHTML = '<span class="spin"></span>';
     try {
-      await setDoc(doc(db, 'households', code), { name, ownerUid: S.uid, createdAt: Date.now(), settings: DEF, pinSet: { admin: true } });
+      await setDoc(doc(db, 'households', code), { name, ownerUid: S.uid, createdAt: Date.now(), settings: DEF, pinSet: { admin: true }, seedItemsV: SEED_ITEMS_V });
     } catch (e) { el.disabled = false; el.textContent = 'إنشاء البيت'; return toast('هذا الرمز مستخدم، اختر رمزاً آخر'); }
     try {
       const hh = await pinHash(code, 'admin', p1);
@@ -864,7 +864,7 @@ function attachRoleSubs() {
   const r = S.role;
   sub(H(), 'house', s => { S.house = s.exists() ? s.data() : null; });
   sub(HC('dishes'), 'dishes', s => { const o = {}; s.forEach(d => { o[d.id] = Object.assign({ id: d.id }, d.data()); }); S.dishes = o; migrateNames('dishes', DISHES, o); });
-  sub(HC('items'), 'items', s => { const o = {}; s.forEach(d => { o[d.id] = Object.assign({ id: d.id }, d.data()); }); S.items = o; migrateNames('items', ITEMS, o); });
+  sub(HC('items'), 'items', s => { const o = {}; s.forEach(d => { o[d.id] = Object.assign({ id: d.id }, d.data()); }); S.items = o; migrateNames('items', ITEMS, o); setTimeout(migrateItemsV2, 500); });
   sub(query(HC('menu'), where('date', '>=', addDays(today(), -60))), 'menu', s => { const o = {}; s.forEach(d => { o[d.id] = Object.assign({}, d.data(), { date: d.id }); }); S.menus = o; });
   sub(HC('dishPhotos'), 'photos', s => { const o = {}; s.forEach(d => { o[d.id] = d.data().data; }); S.photos = o; });
   if (r !== 'family') sub(HC('shortages'), 'shortages', s => { S.shortages = s.docs.map(d => Object.assign({ id: d.id }, d.data())).sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0)); });
@@ -894,7 +894,7 @@ onAuthStateChanged(auth, async u => {
 });
 if ('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js').then(r => { document.addEventListener('visibilitychange', () => { if (!document.hidden) r.update().catch(() => { }); }); }).catch(() => { });
 /* --- update check: compare baked version with version.json --- */
-const APP_V = '18';
+const APP_V = '19';
 let updShown = false;
 function checkUpdate() {
   if (updShown) return;
@@ -913,6 +913,11 @@ document.addEventListener('visibilitychange', () => { if (!document.hidden) chec
 
 /* --- fill new-language names (e.g. Telugu) into existing households, admin only, once per session --- */
 const migDone = {};
+function migrateItemsV2() {
+  if (S.role !== 'admin' || !S.house || (S.house.seedItemsV || 1) >= SEED_ITEMS_V || migDone.v2 || !S.loaded.items) return; migDone.v2 = true;
+  const b = writeBatch(db); ITEMS.filter(x => NEW_ITEMS_V2.includes(x.id) && !S.items[x.id]).forEach(x => b.set(H('items', x.id), x)); b.update(H(), { seedItemsV: SEED_ITEMS_V });
+  b.commit().catch(() => { migDone.v2 = false; });
+}
 function migrateNames(coll, seed, cur) {
   if (S.role !== 'admin' || migDone[coll] || !Object.keys(cur).length) return; migDone[coll] = true;
   const b = writeBatch(db); let n = 0;

@@ -53,7 +53,7 @@ async function household(h) {
   const reps = (await h.ref.collection('messages').where('replyAt', '>', last).get()).docs.map(d => d.data()).filter(m => m.replyAt <= now);
   for (const m of reps) sent += await send(byUid(m.fromUid), l => ({ title: '💬 ' + tl(l, 'reply'), body: (m.reply || '').trim() || (m.replyAudio ? '🎙️' : '') }), 'reply');
   // 3) new shortages -> driver
-  const sh = (await h.ref.collection('shortages').where('createdAt', '>', last).get()).docs.map(d => d.data()).filter(s => s.createdAt <= now);
+  const sh = (await h.ref.collection('shortages').where('createdAt', '>', last).get()).docs.map(d => d.data()).filter(s => s.createdAt <= now && s.by !== 'driver');
   if (sh.length) sent += await send(byRole('driver'), l => ({ title: '🛒 ' + tl(l, 'toBuy') + ' (' + sh.length + ')', body: sh.map(s => nm((s.itemId && items[s.itemId]) || s, l) + ' × ' + s.qty + ' ' + tl(l, 'u_' + s.unit)).join('، ') }), 'short');
   // 4) menu for the cook: tomorrow's menu the evening before, optional morning reminder, and edits
   const st = Object.assign({ notifyEve: 19, notifyMorning: 8 }, (h.data().settings || {}));
