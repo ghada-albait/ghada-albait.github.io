@@ -65,10 +65,12 @@ service cloud.firestore {
       }
 
       match /messages/{id} {
-        allow read: if isAdmin(h) || (isMember(h) && resource.data.fromUid == request.auth.uid);
+        allow read: if isAdmin(h) || (isMember(h) && (resource.data.fromUid == request.auth.uid || resource.data.get('to', '') == role(h)));
         allow create: if isMember(h) && request.resource.data.fromUid == request.auth.uid
           && request.resource.data.from == role(h) && request.resource.data.status == 'new'
-          && request.resource.data.text.size() < 2000;
+          && request.resource.data.text.size() < 2000
+          && (request.resource.data.get('audio', null) == null || request.resource.data.audio.size() < 900000)
+          && (request.resource.data.get('to', null) == null || role(h) == 'admin');
         allow update: if isAdmin(h);
         allow delete: if isAdmin(h) || (isMember(h) && resource.data.fromUid == request.auth.uid);
       }

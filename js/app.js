@@ -2,10 +2,10 @@
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
 import { getAuth, signInAnonymously, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
 import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager, doc, getDoc, setDoc, updateDoc, deleteDoc, collection, addDoc, onSnapshot, query, where, orderBy, limit, writeBatch } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
-import { firebaseConfig } from './firebase-config.js?v=14';
-import { I18N, QUICK_NOTES } from './i18n.js?v=14';
-import { DISHES, ITEMS } from './seed.js?v=14';
-import { HELP } from './help.js?v=14';
+import { firebaseConfig } from './firebase-config.js?v=15';
+import { I18N, QUICK_NOTES } from './i18n.js?v=15';
+import { DISHES, ITEMS } from './seed.js?v=15';
+import { HELP } from './help.js?v=15';
 
 const fbApp = initializeApp(firebaseConfig);
 const auth = getAuth(fbApp);
@@ -207,6 +207,36 @@ function weekList(start, n, admin) {
 }
 
 
+/* --- voice messages --- */
+let expDone = false;
+function expireVoice() { if (expDone || S.role !== 'admin') return; expDone = true; const lim = Date.now() - 30 * 864e5; S.msgs.filter(m => m.at < lim && (m.audio || m.replyAudio)).forEach(m => updateDoc(H('messages', m.id), { audio: null, replyAudio: null, audioExpired: true }).catch(() => { })); }
+const audioHtml = (src, expired) => src ? `<audio class="voice" controls preload="none" src="${esc(src)}"></audio>` : (expired ? `<div class="meta">🎙️ ${esc(t('voiceExpired'))}</div>` : '');
+let REC = null;
+function recHtml() {
+  const r = M.rec || {};
+  if (r.data) return `<div class="recbox"><audio class="voice" controls src="${esc(r.data)}"></audio><button class="icon" data-act="recDel" aria-label="${esc(t('recDel'))}">🗑</button></div>`;
+  if (r.on) return `<button class="block recbtn on" data-act="recStop">⏹ ${esc(t('recStop'))} · <span id="recT">0:00</span> / 1:00</button>`;
+  return `<button class="block ghost recbtn" data-act="recStart">🎙️ ${esc(t('recVoice'))}</button>`;
+}
+async function recStart() {
+  if (!(navigator.mediaDevices && window.MediaRecorder)) return toast(t('recNA'));
+  let stream; try { stream = await navigator.mediaDevices.getUserMedia({ audio: true }); } catch (e) { return toast(t('micDenied')); }
+  const types = ['audio/mp4', 'audio/webm;codecs=opus', 'audio/webm', 'audio/ogg;codecs=opus'];
+  const mime = types.find(x => { try { return MediaRecorder.isTypeSupported(x); } catch (e) { return false; } }) || '';
+  const mr = new MediaRecorder(stream, Object.assign({ audioBitsPerSecond: 32000 }, mime ? { mimeType: mime } : {}));
+  const chunks = [], t0 = Date.now(), modalRef = M;
+  REC = { mr, stream, t0, timer: setInterval(() => { const sec = Math.floor((Date.now() - t0) / 1000), el = document.getElementById('recT'); if (el) el.textContent = Math.floor(sec / 60) + ':' + pad(sec % 60); if (sec >= 60) recStop(); }, 250) };
+  mr.ondataavailable = e => { if (e.data && e.data.size) chunks.push(e.data); };
+  mr.onstop = () => {
+    clearInterval(REC && REC.timer); stream.getTracks().forEach(tr => tr.stop());
+    const blob = new Blob(chunks, { type: mr.mimeType || mime || 'audio/webm' }), dur = Math.round((Date.now() - t0) / 1000);
+    const fr = new FileReader(); fr.onload = () => { if (M !== modalRef) return; if (fr.result.length > 900000) { toast('⚠️ 1:00'); M.rec = {}; } else M.rec = { data: fr.result, dur }; syncModal(); renderModal(); }; fr.readAsDataURL(blob); REC = null;
+  };
+  mr.start(1000); M.rec = { on: true }; syncModal(); renderModal();
+}
+function recStop() { if (REC && REC.mr.state !== 'inactive') REC.mr.stop(); }
+function recCancel() { if (REC) { try { REC.mr.onstop = null; REC.mr.stop(); } catch (e) { } clearInterval(REC.timer); REC.stream.getTracks().forEach(tr => tr.stop()); REC = null; } }
+
 /* --- WhatsApp share (admin) --- */
 const WA_KINDS = [['today', 'غداء اليوم'], ['tomorrow', 'غداء بكرة'], ['week', 'منيو الأسبوع'], ['list', 'قائمة المشتريات'], ['recipe', 'طريقة طبق'], ['note', 'تعليمات / ملاحظة']];
 const tl = (l, k) => (I18N[l] && I18N[l][k]) || I18N.en[k] || k;
@@ -356,22 +386,23 @@ function adminSettings() {
 }
 
 /* --- messages --- */
-const newMsgs = () => S.msgs.filter(m => m.status !== 'done').length;
-const unreadReplies = () => { const seen = +(ls('msgSeen_' + S.hid) || 0); return S.myMsgs.filter(m => (m.replyAt || m.doneAt || 0) > seen).length; };
+const newMsgs = () => S.msgs.filter(m => m.status !== 'done' && m.type !== 'admin').length;
+const unreadReplies = () => { const seen = +(ls('msgSeen_' + S.hid) || 0); return S.myMsgs.filter(m => (m.replyAt || m.doneAt || 0) > seen).length + (S.toMe || []).filter(m => m.at > seen).length; };
 const trLink = (txt, from, to) => `https://translate.google.com/?sl=${from}&tl=${to}&op=translate&text=${encodeURIComponent(txt)}`;
 function timeAgo(ts) { try { return new Date(ts).toLocaleString(LANGS[L()].loc, { weekday: 'short', hour: 'numeric', minute: '2-digit' }); } catch (e) { return ''; } }
 function msgDish(m, lang) { const d = m.dishId && S.dishes[m.dishId]; if (!d) return ''; return `<div class="row" style="padding:8px 0;border:0">${thumb(d)}<div class="grow"><div class="nm">${esc(split(nm(d, lang))[0])}</div><div class="meta">${m.date ? esc(wdName(m.date)) + ' ' + esc(fmt(m.date, { day: 'numeric', month: 'short' })) : esc(t('anyDay'))}</div></div></div>`; }
 function adminInbox() {
-  const open = S.msgs.filter(m => m.status !== 'done').sort((a, b) => b.at - a.at), done = S.msgs.filter(m => m.status === 'done').sort((a, b) => b.at - a.at);
-  const card = m => `<div class="card flat${m.status === 'done' ? ' sw' : ''}" data-sw="msgDel" data-id="${m.id}"><div class="mhead"><span class="mav ${m.from}">${esc(((m.fromName || ROLE_AR[m.from] || '?').trim()[0] || '?').toUpperCase())}</span><div class="grow" style="min-width:0"><div class="mname">${esc(m.fromName || ROLE_AR[m.from] || '')}</div><div class="meta">${m.fromName ? esc(ROLE_AR[m.from] || '') + ' · ' : ''}${m.type === 'suggest' ? '🍽️ اقتراح طبق' : '💬 رسالة'}</div></div><span class="meta" style="flex:none">${esc(timeAgo(m.at))}</span></div>${msgDish(m, 'ar')}${m.text ? `<p style="margin:8px 0 0">${esc(m.text)}${m.lang && m.lang !== 'ar' ? ` <a class="small" href="${trLink(m.text, 'auto', 'ar')}" target="_blank" rel="noopener">ترجم ›</a>` : ''}</p>` : ''}${m.reply ? `<div class="note" style="margin:10px 0 0"><b>ردّك</b>${esc(m.reply)}</div>` : ''}${m.status !== 'done' ? `<div class="btns" style="margin-top:10px">${m.type === 'suggest' && S.dishes[m.dishId] ? `<button class="sm" data-act="msgToMenu" data-id="${m.id}">أضف للمنيو</button>` : ''}<button class="sm ghost" data-act="msgReply" data-id="${m.id}">رد</button><button class="sm soft" data-act="msgDone" data-id="${m.id}">تم</button></div>` : `<div style="margin-top:8px;display:flex;justify-content:flex-end">${delBtn('m' + m.id, 'msgDel', m.id)}</div>`}</div>`;
-  let h = `<div class="sec"><h2>الجديدة${open.length ? ` <span class="badge">${open.length}</span>` : ''}</h2></div>` + (open.length ? open.map(card).join('') : `<div class="card empty">لا توجد طلبات جديدة</div>`);
+  const inc = S.msgs.filter(m => m.type !== 'admin'), sent = S.msgs.filter(m => m.type === 'admin').sort((a, b) => b.at - a.at), open = inc.filter(m => m.status !== 'done').sort((a, b) => b.at - a.at), done = inc.filter(m => m.status === 'done').sort((a, b) => b.at - a.at);
+  const card = m => `<div class="card flat${m.status === 'done' ? ' sw' : ''}" data-sw="msgDel" data-id="${m.id}"><div class="mhead"><span class="mav ${m.from}">${esc(((m.fromName || ROLE_AR[m.from] || '?').trim()[0] || '?').toUpperCase())}</span><div class="grow" style="min-width:0"><div class="mname">${esc(m.fromName || ROLE_AR[m.from] || '')}</div><div class="meta">${m.fromName ? esc(ROLE_AR[m.from] || '') + ' · ' : ''}${m.type === 'suggest' ? '🍽️ اقتراح طبق' : '💬 رسالة'}</div></div><span class="meta" style="flex:none">${esc(timeAgo(m.at))}</span></div>${msgDish(m, 'ar')}${audioHtml(m.audio, m.audioExpired)}${m.text ? `<p style="margin:8px 0 0">${esc(m.text)}${m.lang && m.lang !== 'ar' ? ` <a class="small" href="${trLink(m.text, 'auto', 'ar')}" target="_blank" rel="noopener">ترجم ›</a>` : ''}</p>` : ''}${m.reply || m.replyAudio ? `<div class="note" style="margin:10px 0 0"><b>ردّك</b>${esc(m.reply || '')}${audioHtml(m.replyAudio)}</div>` : ''}${m.status !== 'done' ? `<div class="btns" style="margin-top:10px">${m.type === 'suggest' && S.dishes[m.dishId] ? `<button class="sm" data-act="msgToMenu" data-id="${m.id}">أضف للمنيو</button>` : ''}<button class="sm ghost" data-act="msgReply" data-id="${m.id}">رد</button><button class="sm soft" data-act="msgDone" data-id="${m.id}">تم</button></div>` : `<div style="margin-top:8px;display:flex;justify-content:flex-end">${delBtn('m' + m.id, 'msgDel', m.id)}</div>`}</div>`;
+  let h = `<div class="btns" style="margin-top:4px"><button class="block soft" data-act="newAdminMsg">✉️ رسالة جديدة للطباخ أو السائق أو العائلة</button></div><div class="sec"><h2>الجديدة${open.length ? ` <span class="badge">${open.length}</span>` : ''}</h2></div>` + (open.length ? open.map(card).join('') : `<div class="card empty">لا توجد طلبات جديدة</div>`);
+  if (sent.length) h += `<div class="card flat"><details${dOpen('sent')}><summary>المرسلة منك (${sent.length})</summary>${sent.slice(0, 30).map(m => `<div class="row sw" data-sw="msgDel" data-id="${m.id}" style="align-items:flex-start"><div class="grow"><div class="meta">إلى ${esc(ROLE_AR[m.to] || '')} · ${esc(timeAgo(m.at))}</div>${m.text ? `<div style="margin-top:4px">${esc(m.text)}</div>` : ''}${audioHtml(m.audio, m.audioExpired)}</div>${delBtn('m' + m.id, 'msgDel', m.id)}</div>`).join('')}</details></div>`;
   if (done.length) h += `<div class="card flat"><details${dOpen('done')}><summary>المنتهية (${done.length})</summary>${done.slice(0, 30).map(card).join('')}</details></div>`;
   return h;
 }
 function myMsgsHtml() {
-  const list = S.myMsgs.slice().sort((a, b) => b.at - a.at);
+  const seenIds = new Set(), list = S.myMsgs.concat(S.toMe || []).filter(m => !seenIds.has(m.id) && seenIds.add(m.id)).sort((a, b) => b.at - a.at);
   if (!list.length) return `<div class="empty">${esc(t('noMsgs'))}</div>`;
-  return list.map(m => `<div class="card flat" style="margin:8px 0"><div style="display:flex;justify-content:space-between;gap:8px"><span class="badge ${m.status === 'done' ? 'ok' : 'gray'}">${esc(m.status === 'done' ? t('st_done') : t('st_new'))}</span><span class="meta">${esc(timeAgo(m.at))}</span></div>${msgDish(m)}${m.text ? `<p style="margin:6px 0 0">${esc(m.text)}</p>` : ''}${m.reply ? `<div class="note" style="margin:8px 0 0"><b>${esc(t('reply'))}</b><div dir="rtl">${esc(m.reply)}${L() !== 'ar' ? ` <a class="tr" href="${trLink(m.reply, 'ar', LANGS[L()].gt)}" target="_blank" rel="noopener">${esc(t('translate'))} ›</a>` : ''}</div></div>` : ''}</div>`).join('');
+  return list.map(m => m.type === 'admin' ? `<div class="card flat adm" style="margin:8px 0"><div class="mhead"><span class="mav">${UI.user}</span><div class="grow"><div class="mname">${esc(t('fromAdmin'))}</div><div class="meta">${esc(timeAgo(m.at))}</div></div></div>${audioHtml(m.audio, m.audioExpired)}${m.text ? `<div dir="rtl" style="margin-top:8px">${esc(m.text)}${L() !== 'ar' ? ` <a class="tr" href="${trLink(m.text, 'ar', LANGS[L()].gt)}" target="_blank" rel="noopener">${esc(t('translate'))} ›</a>` : ''}</div>` : ''}</div>` : `<div class="card flat" style="margin:8px 0"><div style="display:flex;justify-content:space-between;gap:8px"><span class="badge ${m.status === 'done' ? 'ok' : 'gray'}">${esc(m.status === 'done' ? t('st_done') : t('st_new'))}</span><span class="meta">${esc(timeAgo(m.at))}</span></div>${msgDish(m)}${audioHtml(m.audio, m.audioExpired)}${m.text ? `<p style="margin:6px 0 0">${esc(m.text)}</p>` : ''}${m.reply || m.replyAudio ? `<div class="note" style="margin:8px 0 0"><b>${esc(t('reply'))}</b>${audioHtml(m.replyAudio)}<div dir="rtl">${esc(m.reply || '')}${L() !== 'ar' && m.reply ? ` <a class="tr" href="${trLink(m.reply, 'ar', LANGS[L()].gt)}" target="_blank" rel="noopener">${esc(t('translate'))} ›</a>` : ''}</div></div>` : ''}</div>`).join('');
 }
 function modalMsgs() { M.save = null; return `<h3>${esc(t('messages'))}</h3>${S.role === 'driver' ? `<button class="block" data-act="compose" data-v="msg">💬 ${esc(t('msgAdmin'))}</button>` : `<div class="two"><button data-act="compose" data-v="suggest">🍽️ ${esc(t('suggestDish'))}</button><button class="soft" data-act="compose" data-v="msg">💬 ${esc(t('msgAdmin'))}</button></div>`}${myMsgsHtml()}`; }
 function dishTile(d) { const k = [d.name_ar, d.name_en, d.name_hi, d.name_bn, d.name_te, d.name_fil].join(' ').toLowerCase(); const s = photoSrc(d); return `<button class="tile" data-act="pickDish" data-id="${d.id}" data-key="${esc(k)}">${s ? `<img src="${esc(s)}" alt="" loading="lazy" style="width:100%;height:64px;object-fit:cover;border-radius:10px">` : `<span class="te">${esc(d.emoji || '🍽️')}</span>`}<span>${esc(split(nm(d))[0])}</span></button>`; }
@@ -387,7 +418,7 @@ function modalCompose() {
   if (M.kind === 'suggest') {
     const d = S.dishes[M.dishId], days = [null]; for (let i = 0; i < 7; i++) days.push(addDays(today(), i));
     h += `<div class="card flat" style="margin-top:0;display:flex;align-items:center;gap:12px">${thumb(d)}<div class="grow"><div class="nm">${esc(split(nm(d))[0])}</div></div><button class="sm ghost" data-act="unpickDish">${esc(t('back'))}</button></div><div class="field"><span class="flabel">${esc(t('whichDay'))}</span><div class="chips">${days.map(x => `<button class="chip ${M.date === x ? 'on' : ''}" data-act="msgDay" data-v="${x || ''}">${esc(x ? wdName(x) : t('anyDay'))}</button>`).join('')}</div></div><div class="field"><label>${esc(t('optionalNote'))}</label><input data-m="text" value="${esc(M.text || '')}"></div>`;
-  } else h += `<div class="field"><textarea data-m="text" placeholder="${esc(t('writeMsg'))}">${esc(M.text || '')}</textarea></div>`;
+  } else h += `<div class="field"><textarea data-m="text" placeholder="${esc(t('writeMsg'))}">${esc(M.text || '')}</textarea></div>${recHtml()}`;
   return h;
 }
 function monthLabel(m, short) { try { return new Date(+m.slice(0, 4), +m.slice(5, 7) - 1, 1).toLocaleDateString('ar-KW-u-nu-latn', short ? { month: 'short' } : { month: 'long', year: 'numeric' }); } catch (e) { return m; } }
@@ -422,8 +453,8 @@ function adminReport() {
 /* ---------------- modals ---------------- */
 const snap = () => ({ tab: S.tab, adminTab: S.adminTab, libTab: S.libTab, calMonth: S.calMonth });
 function navTo(ch) { try { history.replaceState({ nav: snap(), depth: S.depth }, ''); } catch (e) { } Object.assign(S, ch); S.depth++; try { history.pushState({ nav: snap(), depth: S.depth }, ''); } catch (e) { } confirmKey = null; render(); window.scrollTo(0, 0); }
-function openModal(m) { const was = !!M; M = m; renderModal(); $modal.classList.remove('hidden'); if (!was) { try { history.pushState({ modal: 1, nav: snap(), depth: S.depth }, ''); } catch (e) { } } }
-function hideModal() { M = null; $modal.classList.add('hidden'); $sheet.innerHTML = ''; if (pending) render(); }
+function openModal(m) { recCancel(); const was = !!M; M = m; renderModal(); $modal.classList.remove('hidden'); if (!was) { try { history.pushState({ modal: 1, nav: snap(), depth: S.depth }, ''); } catch (e) { } } }
+function hideModal() { recCancel(); M = null; $modal.classList.add('hidden'); $sheet.innerHTML = ''; if (pending) render(); }
 function closeModal() { hideModal(); try { if (history.state && history.state.modal) history.replaceState({ nav: snap(), depth: S.depth }, ''); } catch (e) { } }
 window.addEventListener('popstate', e => { if (M) { hideModal(); return; } const st = e.state; if (st && st.nav) { Object.assign(S, st.nav); S.depth = st.depth || 0; confirmKey = null; render(); } });
 function syncModal() { if (!M) return; $sheet.querySelectorAll('[data-m]').forEach(el => { M[el.dataset.m] = el.type === 'checkbox' ? el.checked : el.value; }); }
@@ -443,7 +474,8 @@ function renderModal() {
   else if (M.type === 'dayInfo') h += `<h3>${esc(wdName(M.date))} · ${esc(fmt(M.date, { day: 'numeric', month: 'long' }))}</h3>` + heroMenu(M.date);
   else if (M.type === 'msgs') h += modalMsgs();
   else if (M.type === 'compose') h += modalCompose();
-  else if (M.type === 'reply') h += `<h3>رد على الرسالة</h3><div class="field"><textarea data-m="reply" placeholder="يظهر للمرسل مع زر ترجمة">${esc(M.reply || '')}</textarea></div>`;
+  else if (M.type === 'reply') h += `<h3>رد على الرسالة</h3><div class="field"><textarea data-m="reply" placeholder="يظهر للمرسل مع زر ترجمة">${esc(M.reply || '')}</textarea></div>${recHtml()}`;
+  else if (M.type === 'adminMsg') { M.save = 'sendAdminMsg'; M.saveLabel = 'إرسال'; h += `<h3>رسالة جديدة</h3><div class="field"><span class="flabel">إلى</span><div class="chips">${[['cook', 'الطباخ'], ['driver', 'السائق'], ['family', 'العائلة']].map(([k, l]) => `<button class="chip ${M.to === k ? 'on' : ''}" data-act="amTo" data-v="${k}">${l}</button>`).join('')}</div></div><div class="field"><textarea data-m="text" placeholder="بالعربي، ويظهر للمستلم مع زر ترجمة">${esc(M.text || '')}</textarea></div>${recHtml()}`; }
   else if (M.type === 'pickDate') h += `<h3>أي يوم؟</h3><div class="chips">${Array.from({ length: 14 }, (_, i) => addDays(today(), i)).map(x => `<button class="chip" data-act="msgToMenuDate" data-v="${x}">${esc(wdName(x))} ${esc(fmt(x, { day: 'numeric' }))}</button>`).join('')}</div>`;
   else if (M.type === 'pin') h += `<h3>رمز ${ROLE_AR[M.role]}</h3><div class="field"><label>الرمز الجديد (${M.role === 'admin' ? '6' : '4 إلى 6'} أرقام)</label><input data-m="pin" class="pinbox" inputmode="numeric" maxlength="6" value="${esc(M.pin || '')}"></div><p class="small mute">احفظ الرمز عندك، فالتطبيق لا يعرضه بعد الحفظ.</p>`;
   else if (M.type === 'invite') h += `<h3>دعوة ${ROLE_AR[M.role]}</h3><div class="field"><label>اكتب رمز ${ROLE_AR[M.role]} ليُضاف للرسالة</label><input data-m="pin" class="pinbox" inputmode="numeric" maxlength="6" value="${esc(M.pin || '')}"></div><div class="field"><label>لغة الرسالة</label><div class="chips">${['hi', 'bn', 'te', 'fil', 'en', 'ar'].map(k => `<button class="chip ${M.lang === k ? 'on' : ''}" data-act="invLang" data-v="${k}">${LANGS[k].label}</button>`).join('')}</div></div>`;
@@ -710,14 +742,27 @@ const ACT = {
   async sendMsg() {
     const text = (M.text || '').trim(), name = (M.name || '').trim().slice(0, 40);
     if (!name) return toast(t('yourName'));
-    if (M.kind === 'msg' && !text) return toast(t('writeMsg'));
+    const au = (M.rec && M.rec.data) || null;
+    if (M.kind === 'msg' && !text && !au) return toast(t('msgOrVoice'));
     ls('myName_' + S.hid, name);
     M.busy = true; renderModal();
-    try { await addDoc(HC('messages'), { type: M.kind, dishId: M.kind === 'suggest' ? M.dishId : null, date: M.kind === 'suggest' ? (M.date || null) : null, text, from: S.role, fromName: name, fromUid: S.uid, lang: L(), at: Date.now(), status: 'new' }); toast(t('msgSent')); openModal({ type: 'msgs' }); }
+    try { await addDoc(HC('messages'), { type: M.kind, dishId: M.kind === 'suggest' ? M.dishId : null, date: M.kind === 'suggest' ? (M.date || null) : null, text, from: S.role, fromName: name, fromUid: S.uid, lang: L(), at: Date.now(), status: 'new', audio: au, dur: au ? M.rec.dur : null }); toast(t('msgSent')); openModal({ type: 'msgs' }); }
     catch (e) { M.busy = false; renderModal(); toast(errMsg(e)); }
   },
   msgReply(v, id) { const m = S.msgs.find(x => x.id === id); openModal({ type: 'reply', id, reply: (m && m.reply) || '', save: 'saveReply', saveLabel: 'إرسال الرد' }); },
-  async saveReply() { const r = (M.reply || '').trim(); if (!r) return toast('اكتب الرد'); await updateDoc(H('messages', M.id), { reply: r, replyAt: Date.now() }); toast('تم إرسال الرد'); closeModal(); },
+  async saveReply() { const r = (M.reply || '').trim(), au = (M.rec && M.rec.data) || null; if (!r && !au) return toast('اكتب الرد أو سجّل صوتاً'); M.busy = true; renderModal(); try { await updateDoc(H('messages', M.id), { reply: r, replyAt: Date.now(), replyAudio: au, replyDur: au ? M.rec.dur : null }); toast('تم إرسال الرد'); closeModal(); } catch (e) { M.busy = false; renderModal(); toast(errMsg(e)); } },
+  recStart() { recStart(); },
+  recStop() { recStop(); },
+  recDel() { M.rec = {}; renderModal(); },
+  newAdminMsg(v) { openModal({ type: 'adminMsg', to: v || 'cook', text: '' }); },
+  amTo(v) { M.to = v; renderModal(); },
+  async sendAdminMsg() {
+    const text = (M.text || '').trim(), au = (M.rec && M.rec.data) || null;
+    if (!text && !au) return toast('اكتب رسالة أو سجّل صوتاً');
+    M.busy = true; renderModal();
+    try { await addDoc(HC('messages'), { type: 'admin', to: M.to, text, from: 'admin', fromUid: S.uid, lang: 'ar', at: Date.now(), status: 'new', audio: au, dur: au ? M.rec.dur : null }); toast('تم الإرسال ✓'); closeModal(); }
+    catch (e) { M.busy = false; renderModal(); toast(errMsg(e)); }
+  },
   async msgDone(v, id) { await updateDoc(H('messages', id), { status: 'done', doneAt: Date.now() }); },
   async msgDel(v, id) { if (confirmKey !== 'm' + id) { confirmKey = 'm' + id; render(); return; } confirmKey = null; await deleteDoc(H('messages', id)); toast('تم الحذف'); },
   msgToMenu(v, id) { const m = S.msgs.find(x => x.id === id); if (!m) return; S._msg = m; if (m.date) return ACT.msgToMenuDate(m.date); openModal({ type: 'pickDate' }); },
@@ -763,7 +808,7 @@ window.addEventListener('online', () => { S.offline = false; schedule(); });
 window.addEventListener('offline', () => { S.offline = true; schedule(); });
 
 /* ---------------- data ---------------- */
-function stop() { roleSubsOn = false; for (const k in migDone) delete migDone[k]; unsubs.forEach(u => { try { u(); } catch (e) { } }); unsubs = []; Object.assign(S, { dishes: {}, items: {}, menus: {}, shortages: [], purchases: [], photos: {}, members: [], queue: [], msgs: [], myMsgs: [], loaded: {}, house: null }); genDone = false; }
+function stop() { roleSubsOn = false; for (const k in migDone) delete migDone[k]; unsubs.forEach(u => { try { u(); } catch (e) { } }); unsubs = []; Object.assign(S, { dishes: {}, items: {}, menus: {}, shortages: [], purchases: [], photos: {}, members: [], queue: [], msgs: [], myMsgs: [], toMe: [], loaded: {}, house: null }); genDone = false; }
 function sub(ref, key, fn, onErr) { unsubs.push(onSnapshot(ref, snap => { fn(snap); S.loaded[key] = true; if (key === 'dishes' || key === 'menu' || key === 'house') maybeGenerate(); schedule(); }, err => { console.warn(key, err); if (onErr) onErr(err); S.loaded[key] = true; schedule(); })); }
 function start(hid) {
   stop(); S.hid = hid; S.view = 'app'; render();
@@ -785,9 +830,10 @@ function attachRoleSubs() {
   sub(HC('dishPhotos'), 'photos', s => { const o = {}; s.forEach(d => { o[d.id] = d.data().data; }); S.photos = o; });
   if (r !== 'family') sub(HC('shortages'), 'shortages', s => { S.shortages = s.docs.map(d => Object.assign({ id: d.id }, d.data())).sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0)); });
   if (r === 'admin' || r === 'driver') sub(query(HC('purchases'), orderBy('ts', 'desc'), limit(1500)), 'purchases', s => { S.purchases = s.docs.map(d => Object.assign({ id: d.id }, d.data())); });
+  if (r !== 'admin') sub(query(HC('messages'), where('to', '==', r)), 'toMe', s => { S.toMe = s.docs.map(d => Object.assign({ id: d.id }, d.data())); if (M && M.type === 'msgs') renderModal(); });
   if (r !== 'admin') sub(query(HC('messages'), where('fromUid', '==', S.uid)), 'myMsgs', s => { S.myMsgs = s.docs.map(d => Object.assign({ id: d.id }, d.data())); if (M && M.type === 'msgs') renderModal(); });
   if (r === 'admin') {
-    sub(HC('messages'), 'msgs', s => { S.msgs = s.docs.map(d => Object.assign({ id: d.id }, d.data())); });
+    sub(HC('messages'), 'msgs', s => { S.msgs = s.docs.map(d => Object.assign({ id: d.id }, d.data())); expireVoice(); });
     sub(HC('members'), 'members', s => { S.members = s.docs.map(d => Object.assign({ id: d.id }, d.data())); });
     sub(HC('photoSubmissions'), 'queue', s => { S.queue = s.docs.map(d => Object.assign({ id: d.id }, d.data())); });
   }
@@ -809,7 +855,7 @@ onAuthStateChanged(auth, async u => {
 });
 if ('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js').then(r => { document.addEventListener('visibilitychange', () => { if (!document.hidden) r.update().catch(() => { }); }); }).catch(() => { });
 /* --- update check: compare baked version with version.json --- */
-const APP_V = '14';
+const APP_V = '15';
 let updShown = false;
 function checkUpdate() {
   if (updShown) return;

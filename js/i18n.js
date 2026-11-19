@@ -1,6 +1,14 @@
 // Interface translations (ar, en, hi, bn, fil)
 export const I18N = {
 "ar": {
+"recVoice": "تسجيل رسالة صوتية",
+"recStop": "إيقاف",
+"recDel": "حذف التسجيل",
+"recNA": "التسجيل الصوتي غير مدعوم في هذا المتصفح",
+"micDenied": "اسمح للتطبيق باستخدام الميكروفون",
+"fromAdmin": "من الإدارة",
+"voiceExpired": "انتهت مدة الرسالة الصوتية",
+"msgOrVoice": "اكتب رسالة أو سجّل صوتاً",
 "recipe": "طريقة التحضير",
 "weekMenu": "منيو الأيام القادمة",
 "instructions": "تعليمات",
@@ -128,6 +136,14 @@ export const I18N = {
 "toTop": "للأعلى"
 },
 "en": {
+"recVoice": "Record voice message",
+"recStop": "Stop",
+"recDel": "Delete recording",
+"recNA": "Voice recording is not supported in this browser",
+"micDenied": "Allow the app to use the microphone",
+"fromAdmin": "From the manager",
+"voiceExpired": "Voice message expired",
+"msgOrVoice": "Write a message or record your voice",
 "recipe": "How to cook",
 "weekMenu": "Menu for the coming days",
 "instructions": "Instructions",
@@ -255,6 +271,14 @@ export const I18N = {
 "toTop": "To top"
 },
 "hi": {
+"recVoice": "आवाज़ संदेश रिकॉर्ड करें",
+"recStop": "रोकें",
+"recDel": "रिकॉर्डिंग हटाएं",
+"recNA": "इस ब्राउज़र में आवाज़ रिकॉर्डिंग नहीं होती",
+"micDenied": "ऐप को माइक्रोफ़ोन की अनुमति दें",
+"fromAdmin": "प्रबंधक की ओर से",
+"voiceExpired": "आवाज़ संदेश की अवधि समाप्त",
+"msgOrVoice": "संदेश लिखें या आवाज़ रिकॉर्ड करें",
 "recipe": "बनाने का तरीका",
 "weekMenu": "आने वाले दिनों का मेनू",
 "instructions": "निर्देश",
@@ -382,6 +406,14 @@ export const I18N = {
 "toTop": "ऊपर"
 },
 "bn": {
+"recVoice": "ভয়েস মেসেজ রেকর্ড করুন",
+"recStop": "থামান",
+"recDel": "রেকর্ডিং মুছুন",
+"recNA": "এই ব্রাউজারে ভয়েস রেকর্ড হয় না",
+"micDenied": "অ্যাপকে মাইক্রোফোন ব্যবহারের অনুমতি দিন",
+"fromAdmin": "ম্যানেজারের কাছ থেকে",
+"voiceExpired": "ভয়েস মেসেজের মেয়াদ শেষ",
+"msgOrVoice": "বার্তা লিখুন বা ভয়েস রেকর্ড করুন",
 "recipe": "রান্নার নিয়ম",
 "weekMenu": "আগামী দিনের মেনু",
 "instructions": "নির্দেশনা",
@@ -509,6 +541,14 @@ export const I18N = {
 "toTop": "উপরে"
 },
 "fil": {
+"recVoice": "Mag-record ng voice message",
+"recStop": "Itigil",
+"recDel": "Burahin ang recording",
+"recNA": "Hindi suportado ang pag-record sa browser na ito",
+"micDenied": "Payagan ang app na gamitin ang mikropono",
+"fromAdmin": "Mula sa tagapamahala",
+"voiceExpired": "Nag-expire ang voice message",
+"msgOrVoice": "Sumulat o mag-record ng boses",
 "recipe": "Paano lutuin",
 "weekMenu": "Menu sa mga susunod na araw",
 "instructions": "Mga tagubilin",
@@ -636,6 +676,14 @@ export const I18N = {
 "toTop": "Itaas"
 },
 "te": {
+"recVoice": "వాయిస్ సందేశం రికార్డ్ చేయండి",
+"recStop": "ఆపండి",
+"recDel": "రికార్డింగ్ తొలగించండి",
+"recNA": "ఈ బ్రౌజర్‌లో వాయిస్ రికార్డింగ్ పనిచేయదు",
+"micDenied": "యాప్‌కు మైక్రోఫోన్ అనుమతి ఇవ్వండి",
+"fromAdmin": "మేనేజర్ నుండి",
+"voiceExpired": "వాయిస్ సందేశం గడువు ముగిసింది",
+"msgOrVoice": "సందేశం రాయండి లేదా వాయిస్ రికార్డ్ చేయండి",
 "recipe": "వండే విధానం",
 "weekMenu": "రాబోయే రోజుల మెనూ",
 "instructions": "సూచనలు",
