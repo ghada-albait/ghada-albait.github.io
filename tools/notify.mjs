@@ -13,11 +13,14 @@ const nm = (o, l) => !o ? '' : (o.custom || o['name_' + l] || o.name_en || o.nam
 const kwt = d => new Date(d.getTime() + 3 * 3600e3); // Kuwait time (UTC+3, no DST)
 const dayKey = d => kwt(d).toISOString().slice(0, 10);
 
-let HID = ''; // current household, sent with each notification so the tap can open the right house
+let HID = '', HREF = null, LIVE = null; // current household; LIVE = uids that are still members (loaded only when sending)
 async function send(tokDocs, build, tag) {
   let n = 0;
+  if (tokDocs.length && !LIVE) { LIVE = new Set(); (await HREF.collection('members').get()).forEach(d => LIVE.add(d.id)); }
   for (const td of tokDocs) {
-    const t = td.data(), l = t.lang || 'en', msg = build(l);
+    const t = td.data(), l = t.lang || 'en';
+    if (!LIVE.has(t.uid || td.id)) { await td.ref.delete().catch(() => {}); continue; } // device was removed from the house
+    const msg = build(l);
     if (!msg) continue;
     try {
       await fcm.send({ token: t.token, data: { title: msg.title, body: (msg.body || '').slice(0, 300), url: SITE + '?h=' + encodeURIComponent(HID), hid: HID, tag: tag || '', lang: l, dir: RTL[l] ? 'rtl' : 'ltr' }, webpush: { headers: { Urgency: 'high', TTL: '86400' } } });
@@ -34,13 +37,14 @@ async function send(tokDocs, build, tag) {
 // Reads are kept low (Firestore free tier = 50k reads/day for ALL households):
 // dishes/items are loaded only when a notification will actually be sent, and each menu doc is read once per run.
 async function household(h) {
-  const hid = h.id, metaRef = h.ref.collection('meta').doc('notify'); HID = hid;
+  const hid = h.id, metaRef = h.ref.collection('meta').doc('notify'); HID = hid; HREF = h.ref; LIVE = null;
   const meta = (await metaRef.get()).data() || {}, now = Date.now();
   const last = meta.lastRun || 0;
   if (!last) { await metaRef.set({ lastRun: now }, { merge: true }); return 0; } // first run: start from now, no backlog
   const toks = (await h.ref.collection('tokens').get()).docs;
   if (!toks.length) { await metaRef.set({ lastRun: now }, { merge: true }); return 0; } // nobody to notify
-  const byRole = r => toks.filter(t => t.data().role === r);
+  const byRole = r => toks.filter(t => { const d = t.data(); return d.role === r || (d.roles || []).includes(r); });
+  const byPid = p => toks.filter(t => t.data().pid === p);
   const byUid = u => toks.filter(t => t.data().uid === u);
   let sent = 0;
   let dishes = null, items = null;
@@ -52,7 +56,7 @@ async function household(h) {
   if (msgs.some(m => m.type === 'suggest')) await needDishes();
   for (const m of msgs) {
     const what = l => (m.text || '').trim() || (m.audio ? '🎙️' : (m.type === 'suggest' ? nm(dishes[m.dishId], l) : ''));
-    if (m.type === 'admin') sent += await send(byRole(m.to), l => ({ title: '✉️ ' + tl(l, 'fromAdmin'), body: what(l) }), 'msg');
+    if (m.type === 'admin') sent += await send(m.toPid ? byPid(m.toPid) : byRole(m.to), l => ({ title: '✉️ ' + tl(l, 'fromAdmin'), body: what(l) }), 'msg');
     else sent += await send(byRole('admin'), l => ({ title: (m.type === 'suggest' ? '🍽️ ' + tl(l, 'suggestDish') : '💬 ' + tl(l, 'messages')) + ' · ' + (m.fromName || tl(l, 'r_' + m.from)), body: m.type === 'suggest' ? nm(dishes[m.dishId], l) + (m.text ? ' — ' + m.text : '') : what(l) }), 'msg');
   }
   // 2) replies from the manager

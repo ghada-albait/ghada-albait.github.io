@@ -10,6 +10,10 @@ service cloud.firestore {
     function isAdmin(h) { return isMember(h) && role(h) == 'admin'; }
     function isOwner(h) { return signedIn() && get(hpath(h)).data.ownerUid == request.auth.uid; }
     function hasRole(h, roles) { return isMember(h) && role(h) in roles; }
+    function myPid(h) { return memberDoc(h).data.get('pid', '-'); }
+    function pinsDoc(h) { return get(/databases/$(database)/documents/households/$(h)/secret/pins).data; }
+    function personDoc(h, pid) { return get(/databases/$(database)/documents/households/$(h)/people/$(pid)).data; }
+    function validRole(r) { return r in ['admin', 'family', 'cook', 'driver', 'maid']; }
 
     match /households/{h} {
       allow read: if isMember(h);
@@ -22,20 +26,45 @@ service cloud.firestore {
         allow write: if isAdmin(h) || isOwner(h);
       }
 
-      // Joining: the member writes their own doc with the hash of the PIN for a role;
+      // People: one card per person (name, language, roles). Only the manager reads/writes them.
+      match /people/{pid} {
+        allow read, write: if isAdmin(h);
+      }
+      // Personal-PIN lookup: doc id = sha256(house|login|pin) -> { pid, roles, name, lang }.
+      // Anyone signed in may fetch a single doc by its id (needs the PIN to know it); listing is never allowed.
+      match /logins/{lid} {
+        allow get: if signedIn();
+        allow list: if false;
+        allow write: if isAdmin(h);
+      }
+
+      // Joining: the member writes their own doc with the hash of the PIN;
       // the rule compares it with the stored hash, which the client cannot read.
+      //  - shared role PIN (old way): key = role
+      //  - personal PIN: key = 'p_' + pid, and roles must equal the person's roles
       match /members/{uid} {
         allow read: if isMember(h) || (signedIn() && uid == request.auth.uid);
         allow create: if signedIn() && uid == request.auth.uid
-          && request.resource.data.role in ['admin', 'family', 'cook', 'driver']
+          && validRole(request.resource.data.role)
           && (
-            (isOwner(h) && request.resource.data.role == 'admin')
-            || (exists(/databases/$(database)/documents/households/$(h)/secret/pins)
-                && request.resource.data.pinHash == get(/databases/$(database)/documents/households/$(h)/secret/pins).data.get(request.resource.data.role, 'none'))
+            (isOwner(h) && request.resource.data.role == 'admin' && request.resource.data.get('pid', null) == null)
+            || (request.resource.data.get('pid', null) == null
+                && exists(/databases/$(database)/documents/households/$(h)/secret/pins)
+                && request.resource.data.get('roles', [request.resource.data.role]) == [request.resource.data.role]
+                && request.resource.data.pinHash == pinsDoc(h).get(request.resource.data.role, 'none'))
+            || (request.resource.data.get('pid', null) is string
+                && request.resource.data.pinHash == pinsDoc(h).get('p_' + request.resource.data.pid, 'none')
+                && request.resource.data.roles == personDoc(h, request.resource.data.pid).roles
+                && request.resource.data.role in request.resource.data.roles)
           );
-        allow update: if signedIn() && uid == request.auth.uid
-          && request.resource.data.role == resource.data.role
-          && request.resource.data.pinHash == resource.data.pinHash;
+        // a member may update their own doc (language, name, active role among their own roles);
+        // the manager may link a device to a person and set its roles.
+        allow update: if (signedIn() && uid == request.auth.uid
+            && request.resource.data.pinHash == resource.data.pinHash
+            && request.resource.data.get('pid', null) == resource.data.get('pid', null)
+            && request.resource.data.get('roles', null) == resource.data.get('roles', null)
+            && (request.resource.data.role == resource.data.role || request.resource.data.role in resource.data.get('roles', [])))
+          || (isAdmin(h) && validRole(request.resource.data.role) && request.resource.data.pinHash == resource.data.pinHash);
         allow delete: if isAdmin(h) || (signedIn() && uid == request.auth.uid);
       }
 
@@ -52,10 +81,11 @@ service cloud.firestore {
       }
 
       match /shortages/{id} {
-        allow read: if hasRole(h, ['admin', 'cook', 'driver']);
-        allow create: if hasRole(h, ['admin', 'cook', 'driver']);
+        allow read: if hasRole(h, ['admin', 'cook', 'driver', 'maid']);
+        allow create: if hasRole(h, ['admin', 'cook', 'driver', 'maid']);
         allow update: if isAdmin(h);
-        allow delete: if hasRole(h, ['admin', 'cook', 'driver']);
+        allow delete: if hasRole(h, ['admin', 'cook', 'driver'])
+          || (hasRole(h, ['maid']) && resource.data.get('byUid', '') == request.auth.uid);
       }
 
       match /purchases/{id} {
@@ -67,6 +97,7 @@ service cloud.firestore {
       // Push tokens: each device writes only its own; the GitHub Action reads them with the service account
       match /tokens/{uid} {
         allow read, write: if isMember(h) && uid == request.auth.uid;
+        allow delete: if isAdmin(h);
       }
 
       // Lunch ratings: family and manager rate; everyone in the house (except the driver) sees the stars, no names
@@ -86,12 +117,12 @@ service cloud.firestore {
       }
 
       match /messages/{id} {
-        allow read: if isAdmin(h) || (isMember(h) && (resource.data.fromUid == request.auth.uid || resource.data.get('to', '') == role(h)));
+        allow read: if isAdmin(h) || (isMember(h) && (resource.data.fromUid == request.auth.uid || resource.data.get('to', '') == role(h) || resource.data.get('toPid', '-') == myPid(h)));
         allow create: if isMember(h) && request.resource.data.fromUid == request.auth.uid
           && request.resource.data.from == role(h) && request.resource.data.status == 'new'
           && request.resource.data.text.size() < 2000
           && (request.resource.data.get('audio', null) == null || request.resource.data.audio.size() < 900000)
-          && (request.resource.data.get('to', null) == null || role(h) == 'admin');
+          && ((request.resource.data.get('to', null) == null && request.resource.data.get('toPid', null) == null) || role(h) == 'admin');
         allow update: if isAdmin(h);
         allow delete: if isAdmin(h) || (isMember(h) && resource.data.fromUid == request.auth.uid);
       }

@@ -1,13 +1,13 @@
 // غداء البيت — household lunch app (Firebase + GitHub Pages)
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
 import { getAuth, signInAnonymously, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
-import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager, doc, getDoc, setDoc, updateDoc, deleteDoc, collection, addDoc, onSnapshot, query, where, orderBy, limit, writeBatch } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
+import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager, doc, getDoc, setDoc, updateDoc, deleteDoc, deleteField, getDocs, collection, addDoc, onSnapshot, query, where, orderBy, limit, writeBatch } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 import { getMessaging, getToken, onMessage, isSupported as fcmSupported } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-messaging.js';
-import { firebaseConfig, vapidKey } from './firebase-config.js?v=21';
-import { I18N, QUICK_NOTES } from './i18n.js?v=21';
-import { DISHES, ITEMS, SEED_ITEMS_V, NEW_ITEMS_V2 } from './seed.js?v=21';
-import { CHANGES } from './changes.js?v=21';
-import { HELP } from './help.js?v=21';
+import { firebaseConfig, vapidKey } from './firebase-config.js?v=22';
+import { I18N, QUICK_NOTES } from './i18n.js?v=22';
+import { DISHES, ITEMS, SEED_ITEMS_V, NEW_ITEMS_V2 } from './seed.js?v=22';
+import { CHANGES } from './changes.js?v=22';
+import { HELP } from './help.js?v=22';
 
 const fbApp = initializeApp(firebaseConfig);
 const auth = getAuth(fbApp);
@@ -19,7 +19,7 @@ catch (e) { db = initializeFirestore(fbApp, {}); }
 const SITE = 'https://ghada-albait.github.io';
 const CATS = ['main', 'rice', 'side', 'salad', 'soup', 'dessert'];
 const UNITS = ['kg', 'pcs', 'pack', 'bunch', 'tray', 'carton', 'L', 'bag', 'bottle', 'can'];
-const ROLES = ['admin', 'family', 'cook', 'driver'];
+const ROLES = ['admin', 'family', 'cook', 'driver', 'maid'];
 const LANGS = {
   ar: { dir: 'rtl', loc: 'ar-KW-u-nu-latn', label: 'العربية', gt: 'ar' },
   hi: { dir: 'ltr', loc: 'hi-IN', label: 'हिन्दी', gt: 'hi' },
@@ -30,7 +30,7 @@ const LANGS = {
 };
 const WD_AR = ['الأحد', 'الاثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة', 'السبت'];
 const DEF = { notifyEve: 19, notifyMorning: 8, counts: { main: 1, rice: 0, side: 1, salad: 1, soup: 0, dessert: 0 }, noRepeat: 10, horizon: 14, offDays: [] };
-const ROLE_AR = { admin: 'الإدارة', family: 'العائلة', cook: 'الطباخ', driver: 'السائق' };
+const ROLE_AR = { admin: 'الإدارة', family: 'العائلة', cook: 'الطباخ', driver: 'السائق', maid: 'العاملة المنزلية' };
 const ICON = `<svg viewBox="0 0 100 100" aria-hidden="true"><g fill="none" stroke="#F3B35E" stroke-width="5" stroke-linecap="round"><path d="M38 29c-5-5 5-8 0-15"/><path d="M50 27c-5-5 5-8 0-15"/><path d="M62 29c-5-5 5-8 0-15"/></g><g fill="#FFF4E8"><circle cx="50" cy="37" r="4"/><path d="M24 50a26 12 0 0 1 52 0z"/><rect x="18" y="50" width="64" height="6" rx="3"/><path d="M24 58h52v8a14 14 0 0 1-14 14H38a14 14 0 0 1-14-14z"/><rect x="11" y="60" width="11" height="5" rx="2.5"/><rect x="78" y="60" width="11" height="5" rx="2.5"/></g><rect x="24" y="64" width="52" height="3.5" fill="#F3B35E"/></svg>`;
 const IC = (d, extra) => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${d}</svg>`;
 const UI = {
@@ -54,7 +54,7 @@ const SV = {
 
 /* ---------------- state ---------------- */
 const S = {
-  uid: null, hid: null, role: null, lang: null, house: null,
+  uid: null, hid: null, role: null, roles: [], pid: null, lang: null, house: null, people: [],
   dishes: {}, items: {}, menus: {}, shortages: [], purchases: [], photos: {}, subs: [], members: [], queue: [], msgs: [], myMsgs: [],
   loaded: {}, sq: {}, depth: 0, dayView: 'list', calMonth: null, view: 'login', tab: 'today', adminTab: 'menu', libTab: 'dishes', month: null, offline: !navigator.onLine
 };
@@ -88,6 +88,9 @@ const monthOf = d => d.slice(0, 7);
 function toast(m) { const el = document.getElementById('toast'); el.textContent = m; el.classList.add('show'); clearTimeout(toast._t); toast._t = setTimeout(() => el.classList.remove('show'), 2400); }
 async function sha(s) { const b = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(s)); return [...new Uint8Array(b)].map(x => x.toString(16).padStart(2, '0')).join(''); }
 const pinHash = (hid, role, pin) => sha(hid + '|' + role + '|' + pin);
+const loginId = (hid, pin) => sha(hid + '|login|' + pin);
+const STAFF = ['cook', 'driver', 'maid'];
+const isStaff = r => STAFF.includes(r);
 const H = (...p) => doc(db, 'households', S.hid, ...p);
 const HC = (...p) => collection(db, 'households', S.hid, ...p);
 function errMsg(e) { if (e && e.code === 'permission-denied') return L() === 'ar' ? 'لا توجد صلاحية' : 'No permission'; return (e && e.message) || 'Error'; }
@@ -142,15 +145,17 @@ function shell() {
   else if (r === 'family') body = familyView();
   else if (r === 'cook') body = cookView();
   else if (r === 'driver') body = driverView();
+  else if (r === 'maid') body = maidView();
   else body = adminView();
   const badge = n => n ? `<i class="bdg">${n > 99 ? '99+' : n}</i>` : '';
   let nav = '';
   if (r === 'cook') nav = `<nav class="nav"><div class="in" style="grid-template-columns:repeat(3,1fr)">${[['today', 'tabToday', SV.today, 0], ['list', 'tabList', SV.list, S.shortages.length], ['week', 'tabWeek', SV.week, 0]].map(([k, lab, ic, n]) => `<button class="${S.tab === k ? 'on' : ''}" data-act="tab" data-v="${k}"><span class="ico">${ic}${badge(n)}</span>${esc(t(lab))}</button>`).join('')}</div></nav>`;
+  else if (r === 'maid') nav = `<nav class="nav"><div class="in" style="grid-template-columns:repeat(2,1fr)">${[['today', 'tabList', SV.list, S.shortages.length], ['menu', 'tabToday', SV.today, 0]].map(([k, lab, ic, n]) => `<button class="${S.tab === k ? 'on' : ''}" data-act="tab" data-v="${k}"><span class="ico">${ic}${badge(n)}</span>${esc(t(lab))}</button>`).join('')}</div></nav>`;
   else if (r === 'admin') { const a = S.adminTab, more = a === 'lib' || a === 'set'; nav = `<nav class="nav"><div class="in" style="grid-template-columns:repeat(5,1fr)">${[['menu', 'المنيو', UI.menu, 0, a === 'menu'], ['inbox', 'الطلبات', UI.inbox, newMsgs(), a === 'inbox'], ['short', 'النواقص', UI.cart, S.shortages.length, a === 'short'], ['report', 'التقارير', UI.chart, 0, a === 'report'], [more ? a : 'lib', 'المزيد', UI.more, S.queue.length, more]].map(([k, lab, ic, n, on]) => `<button class="${on ? 'on' : ''}" data-act="atab" data-v="${k}"><span class="ico">${ic}${badge(n)}</span>${lab}</button>`).join('')}</div></nav>`; }
   const ib = (act, ic, label, n, extra) => `<button class="ibtn" data-act="${act}" aria-label="${esc(label)}" title="${esc(label)}"${extra || ''}>${ic}${badge(n)}</button>`;
   const acts = (r === 'admin' ? ib('openWa', UI.share, 'واتساب') : ib('openMsgs', UI.chat, t('messages'), unreadReplies()) + `<button class="ibtn lang" data-act="openLang" aria-label="${esc(t('language'))}">${UI.globe}<b>${esc(l.toUpperCase().slice(0, 2))}</b></button>`) + ib('openHelp', UI.help, HELP[l].t.help) + `<button class="avatar" data-act="openMe" aria-label="${esc(t('r_' + r))}">${UI.user}</button>`;
   return `<header class="top"><div class="topin">
-    <div class="brand">${S.depth > 0 ? `<button class="ibtn backbtn" data-act="goBack" aria-label="${esc(t('back'))}">${UI.back}</button>` : `<div class="logo">${ICON}</div>`}<div class="bt"><div class="ttl">${esc((S.house && S.house.name) || t('title'))}</div><div class="sub">${esc(t('r_' + r))} · ${esc(wdName(today()))} ${esc(fmt(today(), { day: 'numeric', month: 'short' }))}</div></div></div>
+    <div class="brand">${S.depth > 0 ? `<button class="ibtn backbtn" data-act="goBack" aria-label="${esc(t('back'))}">${UI.back}</button>` : `<div class="logo">${ICON}</div>`}<div class="bt"><div class="ttl">${esc((S.house && S.house.name) || t('title'))}</div><div class="sub">${S.roles.length > 1 ? `<a href="#" data-act="openMe" class="roleswitch">${esc(t('r_' + r))} ⇄</a>` : esc(t('r_' + r))} · ${esc(wdName(today()))} ${esc(fmt(today(), { day: 'numeric', month: 'short' }))}</div></div></div>
     <div class="actions">${acts}</div>
   </div>${S.offline ? `<div class="banner">${esc(t('offline'))}</div>` : ''}</header>
   <main class="wrap">${pushCard()}${body}</main>${nav}`;
@@ -288,8 +293,8 @@ async function enablePush(ask) {
     fcm = fcm || getMessaging(fbApp);
     const token = await getToken(fcm, { vapidKey, serviceWorkerRegistration: reg });
     if (!token) return;
-    const key = 'pushTok_' + S.hid, sig = token + '|' + S.role + '|' + L();
-    if (ls(key) !== sig || ask) await setDoc(H('tokens', S.uid), { token, role: S.role, lang: L(), uid: S.uid, at: Date.now(), ua: navigator.userAgent.slice(0, 120) });
+    const key = 'pushTok_' + S.hid, sig = token + '|' + S.role + '|' + L() + '|' + (S.roles || []).join(',') + '|' + (S.pid || '');
+    if (ls(key) !== sig || ask) await setDoc(H('tokens', S.uid), { token, role: S.role, roles: S.roles && S.roles.length ? S.roles : [S.role], pid: S.pid || null, lang: L(), uid: S.uid, at: Date.now(), ua: navigator.userAgent.slice(0, 120) });
     ls(key, sig); if (ask) toast(t('notifTest'));
     if (!enablePush._on) { enablePush._on = true; onMessage(fcm, p => { const d = Object.assign({}, p.notification || {}, p.data || {}); toast((d.title || '') + (d.body ? ' — ' + d.body : '')); }); }
   } catch (e) { console.warn('push', e); if (ask) toast(errMsg(e)); }
@@ -408,12 +413,19 @@ function shortRow(s, mode) {
   const o = (s.itemId && S.items[s.itemId]) || s;
   let act = '';
   if (mode === 'driver' || mode === 'admin') act += `<button class="sm" data-act="buy" data-id="${s.id}">${esc(t('markBought'))}</button>`;
-  if (mode === 'cook' || mode === 'admin' || (mode === 'driver' && s.by === 'driver')) act += `<button class="icon" data-act="delShort" data-id="${s.id}" aria-label="${esc(t('del'))}">✕</button>`;
-  return `<div class="row" data-sg="short" data-key="${keyOf(o)}"><div class="thumb ph"><span class="emo">${esc(o.emoji || '🛒')}</span></div><div class="grow"><div class="nm">${esc(nm(o))}</div><div class="meta">${esc(s.qty)} ${esc(unitL(s.unit))}${L() !== 'ar' && !s.custom ? ' · ' + esc(o.name_ar || '') : ''}${s.note ? ' · ' + esc(s.note) : ''}</div></div>${act}</div>`;
+  if (mode === 'cook' || mode === 'admin' || (mode === 'driver' && s.by === 'driver') || (mode === 'maid' && s.byUid && s.byUid === S.uid)) act += `<button class="icon" data-act="delShort" data-id="${s.id}" aria-label="${esc(t('del'))}">✕</button>`;
+  return `<div class="row" data-sg="short" data-key="${keyOf(o)}"><div class="thumb ph"><span class="emo">${esc(o.emoji || '🛒')}</span></div><div class="grow"><div class="nm">${esc(nm(o))}</div><div class="meta">${esc(s.qty)} ${esc(unitL(s.unit))}${L() !== 'ar' && !s.custom ? ' · ' + esc(o.name_ar || '') : ''}${s.note ? ' · ' + esc(s.note) : ''}${(mode === 'admin' || mode === 'driver') && s.byName ? ' · ' + esc(s.byName) : ''}</div></div>${act}</div>`;
 }
 function shortList(mode) {
   if (!S.shortages.length) return `<div class="card empty">${esc(t('nothingToBuy'))}</div>`;
   return `<div class="card flat" style="padding:2px 14px">${S.shortages.map(s => shortRow(s, mode)).join('')}</div>`;
+}
+function maidView() {
+  const td = today();
+  if (S.tab === 'menu') return `<h1 class="page">${esc(t('today'))}</h1>` + heroMenu(td) + `<div class="sec"><h2>${esc(t('tomorrow'))}</h2></div>` + weekList(addDays(td, 1), 1);
+  let h = `<div class="summary"><div style="display:flex;align-items:baseline;gap:8px"><span class="big-n">${S.shortages.length}</span><span>${esc(t('toBuy'))}</span></div></div>`;
+  if (S.shortages.length > 6) h += searchBox('short', t('search'));
+  return h + `<button class="block" data-act="addShort" style="margin-top:12px">+ ${esc(t('addMissing'))}</button>` + shortList('maid') + `<p class="small mute" style="margin:8px 4px">${esc(t('maidHint'))}</p>`;
 }
 const storeL = s => (s === 'coop' ? t('coop') : s === 'supermarket' ? t('supermarket') : (s || t('otherStore')));
 function driverView() {
@@ -465,8 +477,10 @@ function adminLib() {
 }
 function adminSettings() {
   const st = settings(), ps = (S.house && S.house.pinSet) || {};
-  let h = `<div class="sec"><h2>رموز الدخول</h2></div><div class="card flat">` + ROLES.map(r => `<div class="row"><div class="grow"><div class="nm">${ROLE_AR[r]}</div><div class="meta">${ps[r] ? '✓ الرمز محدد' : 'لم يُحدد بعد'}</div></div><button class="sm ${ps[r] ? 'ghost' : ''}" data-act="setPin" data-v="${r}">${ps[r] ? 'تغيير' : 'تحديد'}</button>${ps[r] && r !== 'admin' ? `<button class="sm soft" data-act="invite" data-v="${r}">دعوة</button>` : ''}</div>`).join('') + `<p class="small mute" style="margin:8px 0 0">رمز البيت: <b dir="ltr">${esc(S.hid)}</b> · اجعل رمز كل دور مختلفاً.</p></div>`;
-  h += `<div class="sec"><h2>الأجهزة الداخلة</h2></div><div class="card flat" style="padding:2px 14px">${S.members.map(m => `<div class="row${m.id !== S.uid ? ' sw' : ''}" data-sw="kick" data-id="${m.id}"><div class="grow"><div class="nm">${ROLE_AR[m.role] || m.role}${m.id === S.uid ? ' (هذا الجهاز)' : ''}</div><div class="meta"><bdi>${esc(LANGS[m.lang] ? LANGS[m.lang].label : '')}</bdi> · ${m.joinedAt ? `<bdi>${esc(new Date(m.joinedAt).toLocaleString('ar-KW-u-nu-latn', { day: 'numeric', month: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' }))}</bdi>` : ''}</div></div>${m.id !== S.uid ? `${delBtn('k' + m.id, 'kick', m.id)}` : ''}</div>`).join('') || '<div class="empty">—</div>'}</div><p class="small mute" style="margin:4px 2px">لإخراج شخص نهائياً: احذف جهازه ثم غيّر رمز دوره.</p>`;
+  const legacyOn = ROLES.some(r => r !== 'admin' && ps[r]);
+  let h = peopleHtml();
+  h += `<div class="sec"><h2>${legacyOn ? 'رموز الأدوار المشتركة' : 'رمز الإدارة'}</h2></div><div class="card flat">` + ROLES.filter(r => r === 'admin' || ps[r]).map(r => `<div class="row"><div class="grow"><div class="nm">${ROLE_AR[r]}</div><div class="meta">${ps[r] ? '✓ الرمز محدد' : 'لم يُحدد بعد'}</div></div><button class="sm ${ps[r] ? 'ghost' : ''}" data-act="setPin" data-v="${r}">${ps[r] ? 'تغيير' : 'تحديد'}</button>${ps[r] && r !== 'admin' ? `<button class="sm soft" data-act="invite" data-v="${r}">دعوة</button>` : ''}</div>`).join('') + `<p class="small mute" style="margin:8px 0 0">رمز البيت: <b dir="ltr">${esc(S.hid)}</b>${legacyOn ? ' · الرمز المشترك يدخل به كل من يعرفه. الأفضل رمز خاص لكل شخص من «الأشخاص».' : ''}</p>${legacyOn ? `<button class="sm ghost block" style="margin-top:10px" data-act="legacyOff">${confirmKey === 'legacyOff' ? `اضغط للتأكيد — سيخرج ${S.members.filter(m => !m.pid && m.role !== 'admin').length} جهاز غير مربوط` : '🔒 أوقف الرموز المشتركة (عدا الإدارة)'}</button>` : ''}</div>`;
+  h += `<div class="sec"><h2>الأجهزة الداخلة</h2></div><div class="card flat" style="padding:2px 14px">${S.members.map(m => `<div class="row${m.id !== S.uid ? ' sw' : ''}" data-sw="kick" data-id="${m.id}"><div class="grow"><div class="nm">${m.name ? esc(m.name) + ' · ' : ''}${(m.roles && m.roles.length ? m.roles : [m.role]).map(r => ROLE_AR[r] || r).join(' + ')}${m.id === S.uid ? ' (هذا الجهاز)' : ''}</div><div class="meta">${m.pid ? '<b style="color:var(--ok,#2e7d32)">✓ مربوط ببطاقة</b> · ' : ''}<bdi>${esc(LANGS[m.lang] ? LANGS[m.lang].label : '')}</bdi> · ${m.joinedAt ? `<bdi>${esc(new Date(m.joinedAt).toLocaleString('ar-KW-u-nu-latn', { day: 'numeric', month: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' }))}</bdi>` : ''}</div></div>${!m.pid && S.people.length ? `<button class="sm soft" data-act="linkDev" data-id="${m.id}">اربط</button>` : ''}${m.id !== S.uid ? `${delBtn('k' + m.id, 'kick', m.id)}` : ''}</div>`).join('') || '<div class="empty">—</div>'}</div><p class="small mute" style="margin:4px 2px">«اربط» يضم الجهاز لبطاقة صاحبه بدون ما يسجّل دخول من جديد. ولإخراج شخص نهائياً احذف بطاقته من «الأشخاص».</p>`;
   h += `<div class="sec"><h2>تركيبة الغداء اليومي</h2></div><div class="card flat">` + CATS.map(c => `<div class="row"><div class="grow nm" style="font-size:15px">${esc(t('c_' + c))}${c === 'rice' ? '<div class="meta">يُضاف تلقائياً مع المرق والمشاوي</div>' : ''}</div><select data-s="count_${c}" style="width:120px">${[0, 1, 2, 3].map(n => `<option value="${n}" ${st.counts[c] == n ? 'selected' : ''}>${n === 0 ? (c === 'rice' ? 'تلقائي' : 'بدون') : n}</option>`).join('')}</select></div>`).join('') + `</div>`;
   const hrs = (k, v, off) => `<select data-s="${k}">${off ? `<option value="-1" ${v < 0 ? 'selected' : ''}>بدون</option>` : ''}${Array.from({ length: 24 }, (_, i) => i).map(i => `<option value="${i}" ${+v === i ? 'selected' : ''}>${i === 0 ? '12 ص' : i < 12 ? i + ' ص' : i === 12 ? '12 ظ' : (i - 12) + ' م'}</option>`).join('')}</select>`;
   h += `<div class="sec"><h2>🔔 تنبيهات الطباخ</h2></div><div class="card flat"><div class="row"><div class="grow"><div class="nm" style="font-size:15px">منيو بكرة (قبلها بيوم)</div><div class="meta">يصل للطباخ بلغته</div></div><div style="width:120px">${hrs('notifyEve', st.notifyEve)}</div></div><div class="row"><div class="grow"><div class="nm" style="font-size:15px">تذكير صباحي بمنيو اليوم</div></div><div style="width:120px">${hrs('notifyMorning', st.notifyMorning, true)}</div></div><label class="chk" style="margin-top:8px"><input type="checkbox" data-s="useRatings" ${st.useRatings !== false ? 'checked' : ''}><span>⭐ استخدم التقييمات في المنيو التلقائي (الأطباق المحبوبة تتكرر أكثر، والضعيفة أقل)</span></label><p class="small mute" style="margin:6px 0 0">وإذا عدّلت منيو اليوم أو بكرة بعد إرساله، يصل للطباخ تنبيه بالتعديل. احفظ بالزر أسفل الإعدادات.</p></div>`;
@@ -475,9 +489,38 @@ function adminSettings() {
   return h;
 }
 
+/* --- people (one card per person: name, language, roles, personal PIN) --- */
+const rolesAr = rs => (rs || []).map(r => ROLE_AR[r] || r).join(' + ');
+function peopleHtml() {
+  const devs = pid => S.members.filter(m => m.pid === pid).length;
+  return `<div class="sec"><h2>الأشخاص</h2><button class="sm" data-act="person">+ شخص</button></div><div class="card flat" style="padding:2px 14px">${S.people.map(p => `<div class="row" data-act="person" data-id="${p.id}" style="cursor:pointer"><div class="thumb ph"><span class="emo">${p.roles && p.roles.includes('admin') ? '👑' : p.roles && p.roles.includes('cook') ? '👨‍🍳' : p.roles && p.roles.includes('driver') ? '🚗' : p.roles && p.roles.includes('maid') ? '🧹' : '👤'}</span></div><div class="grow"><div class="nm">${esc(p.name)}</div><div class="meta">${esc(rolesAr(p.roles))} · <bdi>${esc(LANGS[p.lang] ? LANGS[p.lang].label : '')}</bdi> · ${devs(p.id) ? devs(p.id) + ' جهاز' : 'لم يدخل بعد'}</div></div><span class="mute">›</span></div>`).join('') || `<div class="empty small">أضف كل شخص ببطاقة: اسمه ولغته ودوره أو أكثر من دور، وله رمز دخول خاص به.</div>`}</div>`;
+}
+function modalPerson() {
+  M.save = 'savePerson'; M.saveLabel = M.id ? 'حفظ' : 'إضافة وإنشاء رمز';
+  const opts = ['cook', 'driver', 'maid', 'family', 'admin'];
+  let h = `<h3>${M.id ? 'بطاقة ' + esc(M.name || '') : 'شخص جديد'}</h3>
+  <div class="field"><label>الاسم</label><input data-m="name" value="${esc(M.name || '')}" maxlength="40"></div>
+  <div class="field"><span class="flabel">الدور (اختر دوراً أو أكثر)</span><div class="chips">${opts.map(r => `<button class="chip ${M.roles.includes(r) ? 'on' : ''}" data-act="personRole" data-v="${r}">${ROLE_AR[r]}</button>`).join('')}</div>${M.roles.length > 1 ? '<p class="small mute" style="margin:6px 2px 0">يدخل مرة واحدة، ويبدّل بين أدواره من زر 👤.</p>' : ''}</div>
+  <div class="field"><span class="flabel">لغته</span><div class="chips">${['ar', 'en', 'fil', 'hi', 'bn', 'te'].map(k => `<button class="chip ${M.lang === k ? 'on' : ''}" data-act="personLang" data-v="${k}">${LANGS[k].label}</button>`).join('')}</div></div>`;
+  if (M.id) h += `<div class="btns" style="margin-top:14px"><button class="soft" data-act="personPin" data-id="${M.id}">🔑 رمز جديد ودعوة</button><button class="danger" data-act="delPerson" data-id="${M.id}">${confirmKey === 'dp' + M.id ? 'اضغط للتأكيد' : '🗑 حذف الشخص'}</button></div><p class="small mute" style="margin:6px 2px 0">الحذف يُخرج أجهزته فوراً ويُلغي رمزه.</p>`;
+  else h += `<p class="small mute" style="margin:10px 2px 0">بعد الإضافة يُنشأ له رمز من 6 أرقام وتظهر رسالة دعوة بلغته.</p>`;
+  return h;
+}
+const rndPin = () => String(100000 + (crypto.getRandomValues(new Uint32Array(1))[0] % 900000));
+async function issuePin(pid, person) {
+  let pin, lid;
+  for (let i = 0; i < 20; i++) { pin = rndPin(); lid = await loginId(S.hid, pin); const ex = await getDoc(H('logins', lid)); if (!ex.exists()) break; lid = null; }
+  if (!lid) throw new Error('تعذّر إنشاء رمز، حاول مرة أخرى');
+  await setDoc(H('secret', 'pins'), { ['p_' + pid]: await pinHash(S.hid, 'p_' + pid, pin) }, { merge: true });
+  await setDoc(H('logins', lid), { pid, roles: person.roles, name: person.name, lang: person.lang });
+  if (person.loginId && person.loginId !== lid) await deleteDoc(H('logins', person.loginId)).catch(() => {});
+  await setDoc(H('people', pid), { loginId: lid }, { merge: true });
+  return pin;
+}
+
 /* --- messages --- */
 const newMsgs = () => S.msgs.filter(m => m.status !== 'done' && m.type !== 'admin').length;
-const unreadReplies = () => { const seen = +(ls('msgSeen_' + S.hid) || 0); return S.myMsgs.filter(m => (m.replyAt || m.doneAt || 0) > seen).length + (S.toMe || []).filter(m => m.at > seen).length; };
+const unreadReplies = () => { const seen = +(ls('msgSeen_' + S.hid) || 0); return S.myMsgs.filter(m => (m.replyAt || m.doneAt || 0) > seen).length + (S.toMe || []).concat(S.toPid || []).filter(m => m.at > seen).length; };
 const trLink = (txt, from, to) => `https://translate.google.com/?sl=${from}&tl=${to}&op=translate&text=${encodeURIComponent(txt)}`;
 function timeAgo(ts) { try { return new Date(ts).toLocaleString(LANGS[L()].loc, { weekday: 'short', hour: 'numeric', minute: '2-digit' }); } catch (e) { return ''; } }
 function msgDish(m, lang) { const d = m.dishId && S.dishes[m.dishId]; if (!d) return ''; return `<div class="row" style="padding:8px 0;border:0">${thumb(d)}<div class="grow"><div class="nm">${esc(split(nm(d, lang))[0])}</div><div class="meta">${m.date ? esc(wdName(m.date)) + ' ' + esc(fmt(m.date, { day: 'numeric', month: 'short' })) : esc(t('anyDay'))}</div></div></div>`; }
@@ -485,16 +528,16 @@ function adminInbox() {
   const inc = S.msgs.filter(m => m.type !== 'admin'), sent = S.msgs.filter(m => m.type === 'admin').sort((a, b) => b.at - a.at), open = inc.filter(m => m.status !== 'done').sort((a, b) => b.at - a.at), done = inc.filter(m => m.status === 'done').sort((a, b) => b.at - a.at);
   const card = m => `<div class="card flat${m.status === 'done' ? ' sw' : ''}" data-sw="msgDel" data-id="${m.id}"><div class="mhead" data-act="msgView" data-id="${m.id}" style="cursor:pointer"><span class="mav ${m.from}">${esc(((m.fromName || ROLE_AR[m.from] || '?').trim()[0] || '?').toUpperCase())}</span><div class="grow" style="min-width:0"><div class="mname">${esc(m.fromName || ROLE_AR[m.from] || '')}</div><div class="meta">${m.fromName ? esc(ROLE_AR[m.from] || '') + ' · ' : ''}${m.type === 'suggest' ? '🍽️ اقتراح طبق' : '💬 رسالة'}</div></div><span class="meta" style="flex:none">${esc(timeAgo(m.at))} ‹</span></div>${msgDish(m, 'ar')}${audioHtml(m.audio, m.audioExpired)}${m.text ? `<p class="mtext" data-act="msgView" data-id="${m.id}">${esc(m.text)}</p>` : ''}${m.reply || m.replyAudio ? `<div class="note" style="margin:10px 0 0"><b>ردّك</b>${esc(m.reply || '')}${audioHtml(m.replyAudio)}</div>` : ''}${m.status !== 'done' ? `<div class="btns" style="margin-top:10px">${m.type === 'suggest' && S.dishes[m.dishId] ? `<button class="sm" data-act="msgToMenu" data-id="${m.id}">أضف للمنيو</button>` : ''}<button class="sm ghost" data-act="msgReply" data-id="${m.id}">رد</button><button class="sm soft" data-act="msgDone" data-id="${m.id}">تم</button></div>` : `<div style="margin-top:8px;display:flex;justify-content:flex-end">${delBtn('m' + m.id, 'msgDel', m.id)}</div>`}</div>`;
   let h = `<div class="btns" style="margin-top:4px"><button class="block soft" data-act="newAdminMsg">✉️ رسالة جديدة</button></div><div class="sec"><h2>الجديدة${open.length ? ` <span class="badge">${open.length}</span>` : ''}</h2></div>` + (open.length ? open.map(card).join('') : `<div class="card empty">لا توجد طلبات جديدة</div>`);
-  if (sent.length) h += `<div class="card flat"><details${dOpen('sent')}><summary>المرسلة منك (${sent.length})</summary>${sent.slice(0, 30).map(m => `<div class="row sw" data-sw="msgDel" data-id="${m.id}" style="align-items:flex-start"><div class="grow"><div class="meta">إلى ${esc(ROLE_AR[m.to] || '')} · ${esc(timeAgo(m.at))}</div>${m.text ? `<div style="margin-top:4px">${esc(m.text)}</div>` : ''}${audioHtml(m.audio, m.audioExpired)}</div>${delBtn('m' + m.id, 'msgDel', m.id)}</div>`).join('')}</details></div>`;
+  if (sent.length) h += `<div class="card flat"><details${dOpen('sent')}><summary>المرسلة منك (${sent.length})</summary>${sent.slice(0, 30).map(m => `<div class="row sw" data-sw="msgDel" data-id="${m.id}" style="align-items:flex-start"><div class="grow"><div class="meta">إلى ${esc(m.toName || ROLE_AR[m.to] || '')} · ${esc(timeAgo(m.at))}</div>${m.text ? `<div style="margin-top:4px">${esc(m.text)}</div>` : ''}${audioHtml(m.audio, m.audioExpired)}</div>${delBtn('m' + m.id, 'msgDel', m.id)}</div>`).join('')}</details></div>`;
   if (done.length) h += `<div class="card flat"><details${dOpen('done')}><summary>المنتهية (${done.length})</summary>${done.slice(0, 30).map(card).join('')}</details></div>`;
   return h;
 }
 function myMsgsHtml() {
-  const seenIds = new Set(), list = S.myMsgs.concat(S.toMe || []).filter(m => !seenIds.has(m.id) && seenIds.add(m.id)).sort((a, b) => b.at - a.at);
+  const seenIds = new Set(), list = S.myMsgs.concat(S.toMe || [], S.toPid || []).filter(m => !seenIds.has(m.id) && seenIds.add(m.id)).sort((a, b) => b.at - a.at);
   if (!list.length) return `<div class="empty">${esc(t('noMsgs'))}</div>`;
   return list.map(m => m.type === 'admin' ? `<div class="card flat adm" style="margin:8px 0"><div class="mhead"><span class="mav">${UI.user}</span><div class="grow"><div class="mname">${esc(t('fromAdmin'))}</div><div class="meta">${esc(timeAgo(m.at))}</div></div></div>${audioHtml(m.audio, m.audioExpired)}${m.text ? `<div dir="rtl" style="margin-top:8px">${esc(m.text)}${L() !== 'ar' ? ` <a class="tr" href="${trLink(m.text, 'ar', LANGS[L()].gt)}" target="_blank" rel="noopener">${esc(t('translate'))} ›</a>` : ''}</div>` : ''}</div>` : `<div class="card flat" style="margin:8px 0"><div style="display:flex;justify-content:space-between;gap:8px"><span class="badge ${m.status === 'done' ? 'ok' : 'gray'}">${esc(m.status === 'done' ? t('st_done') : t('st_new'))}</span><span class="meta">${esc(timeAgo(m.at))}</span></div>${msgDish(m)}${audioHtml(m.audio, m.audioExpired)}${m.text ? `<p style="margin:6px 0 0">${esc(m.text)}</p>` : ''}${m.reply || m.replyAudio ? `<div class="note" style="margin:8px 0 0"><b>${esc(t('reply'))}</b>${audioHtml(m.replyAudio)}<div dir="rtl">${esc(m.reply || '')}${L() !== 'ar' && m.reply ? ` <a class="tr" href="${trLink(m.reply, 'ar', LANGS[L()].gt)}" target="_blank" rel="noopener">${esc(t('translate'))} ›</a>` : ''}</div></div>` : ''}</div>`).join('');
 }
-function modalMsgs() { M.save = null; return `<h3>${esc(t('messages'))}</h3>${S.role === 'driver' ? `<button class="block" data-act="compose" data-v="msg">💬 ${esc(t('msgAdmin'))}</button>` : `<div class="two"><button data-act="compose" data-v="suggest">🍽️ ${esc(t('suggestDish'))}</button><button class="soft" data-act="compose" data-v="msg">💬 ${esc(t('msgAdmin'))}</button></div>`}${myMsgsHtml()}`; }
+function modalMsgs() { M.save = null; return `<h3>${esc(t('messages'))}</h3>${S.role === 'driver' || S.role === 'maid' ? `<button class="block" data-act="compose" data-v="msg">💬 ${esc(t('msgAdmin'))}</button>` : `<div class="two"><button data-act="compose" data-v="suggest">🍽️ ${esc(t('suggestDish'))}</button><button class="soft" data-act="compose" data-v="msg">💬 ${esc(t('msgAdmin'))}</button></div>`}${myMsgsHtml()}`; }
 function dishTile(d) { const k = [d.name_ar, d.name_en, d.name_hi, d.name_bn, d.name_te, d.name_fil].join(' ').toLowerCase(); const s = photoSrc(d); return `<button class="tile" data-act="pickDish" data-id="${d.id}" data-key="${esc(k)}">${s ? `<img src="${esc(s)}" alt="" loading="lazy" style="width:100%;height:64px;object-fit:cover;border-radius:10px">` : `<span class="te">${esc(d.emoji || '🍽️')}</span>`}<span>${esc(split(nm(d))[0])}</span></button>`; }
 function modalCompose() {
   if (M.kind === 'suggest' && !M.dishId) {
@@ -553,7 +596,7 @@ function renderModal() {
   if (!M) return; $sheet.setAttribute('dir', LANGS[L()].dir);
   let h = '<div class="handle"></div>';
   if (M.type === 'lang') h += `<h3>${esc(t('language'))}</h3>${langChips(S.lang)}`;
-  else if (M.type === 'me') h += `<h3>${esc(t('r_' + S.role))}</h3><p class="mute">${esc((S.house && S.house.name) || '')} · <span dir="ltr">${esc(S.hid)}</span></p>${S.role !== 'admin' ? `<div class="field"><span class="flabel">${esc(t('language'))}</span>${langChips(S.lang || 'ar')}</div>` : ''}<div class="field"><span class="flabel">🔔 ${esc(t('notifOn'))}</span>${notifBlock()}</div><div class="field"><span class="flabel">${esc(t('theme'))}</span><div class="seg" style="grid-template-columns:repeat(3,1fr);margin-top:6px">${['auto', 'light', 'dark'].map(v => `<button class="${(ls('theme') || 'auto') === v ? 'on' : ''}" data-act="setTheme" data-v="${v}">${esc(t('th_' + v))}</button>`).join('')}</div></div><div class="field"><span class="flabel">${esc(t('bioLock'))}</span><button class="${ls('bioId') ? 'soft' : 'ghost'} block" data-act="bioToggle">${ls('bioId') ? '🔒 ' + esc(t('bioIsOn')) : '🔓 ' + esc(t('bioTurnOn'))}</button><p class="small mute" style="margin:6px 2px 0">${esc(t('bioHint'))}</p></div><button class="ghost block" data-act="logout">${esc(confirmKey === 'logout' ? t('logoutAsk') : t('logout'))}</button>`;
+  else if (M.type === 'me') h += `<h3>${esc(ls('myName_' + S.hid) && S.pid ? ls('myName_' + S.hid) + ' · ' : '')}${esc(t('r_' + S.role))}</h3><p class="mute">${esc((S.house && S.house.name) || '')} · <span dir="ltr">${esc(S.hid)}</span></p>${S.roles.length > 1 ? `<div class="field"><span class="flabel">${esc(t('switchRole'))}</span><div class="chips">${S.roles.map(r => `<button class="chip ${r === S.role ? 'on' : ''}" data-act="switchRole" data-v="${r}">${esc(t('r_' + r))}</button>`).join('')}</div></div>` : ''}${S.role !== 'admin' ? `<div class="field"><span class="flabel">${esc(t('language'))}</span>${langChips(S.lang || 'ar')}</div>` : ''}<div class="field"><span class="flabel">🔔 ${esc(t('notifOn'))}</span>${notifBlock()}</div><div class="field"><span class="flabel">${esc(t('theme'))}</span><div class="seg" style="grid-template-columns:repeat(3,1fr);margin-top:6px">${['auto', 'light', 'dark'].map(v => `<button class="${(ls('theme') || 'auto') === v ? 'on' : ''}" data-act="setTheme" data-v="${v}">${esc(t('th_' + v))}</button>`).join('')}</div></div><div class="field"><span class="flabel">${esc(t('bioLock'))}</span><button class="${ls('bioId') ? 'soft' : 'ghost'} block" data-act="bioToggle">${ls('bioId') ? '🔒 ' + esc(t('bioIsOn')) : '🔓 ' + esc(t('bioTurnOn'))}</button><p class="small mute" style="margin:6px 2px 0">${esc(t('bioHint'))}</p></div><button class="ghost block" data-act="logout">${esc(confirmKey === 'logout' ? t('logoutAsk') : t('logout'))}</button>`;
   else if (M.type === 'short') h += modalShort();
   else if (M.type === 'wa') h += modalWa();
   else if (M.type === 'recipe') { const d = S.dishes[M.id]; if (d) h += `<h3>📖 ${esc(split(nm(d))[0])}</h3><div class="note" dir="rtl" style="white-space:pre-wrap;font-family:'IBM Plex Sans Arabic',sans-serif">${esc(d.recipe || '')}</div>${L() !== 'ar' ? `<a class="block" style="display:block;text-align:center;margin-top:10px" href="${trLink(d.recipe || '', 'ar', LANGS[L()].gt)}" target="_blank" rel="noopener">🌐 ${esc(t('translate'))} ›</a>` : ''}`; }
@@ -568,10 +611,12 @@ function renderModal() {
   else if (M.type === 'reply') h += `<h3>رد على الرسالة</h3><div class="field"><textarea data-m="reply" placeholder="يظهر للمرسل مع زر ترجمة">${esc(M.reply || '')}</textarea></div>${recHtml()}`;
   else if (M.type === 'whatsNew') h += modalWhatsNew();
   else if (M.type === 'msgView') { const m = S.msgs.find(x => x.id === M.id); if (m) h += `<div class="mhead"><span class="mav ${m.from}">${esc(((m.fromName || ROLE_AR[m.from] || '?').trim()[0] || '?').toUpperCase())}</span><div class="grow"><div class="mname" style="white-space:normal">${esc(m.fromName || ROLE_AR[m.from] || '')}</div><div class="meta">${esc(ROLE_AR[m.from] || '')} · ${m.type === 'suggest' ? '🍽️ اقتراح طبق' : '💬 رسالة'} · ${esc(timeAgo(m.at))}</div></div></div>${msgDish(m, 'ar')}${audioHtml(m.audio, m.audioExpired)}${m.text ? `<div class="note" style="margin-top:12px;white-space:pre-wrap;font-size:17px" dir="auto">${esc(m.text)}</div>${m.lang !== 'ar' ? `<a class="block" style="display:block;text-align:center;margin-top:10px" href="${trLink(m.text, 'auto', 'ar')}" target="_blank" rel="noopener">🌐 ترجم للعربي ›</a>` : ''}` : ''}${m.reply || m.replyAudio ? `<div class="note" style="margin-top:12px"><b>ردّك</b>${esc(m.reply || '')}${audioHtml(m.replyAudio)}</div>` : ''}<div class="btns" style="margin-top:14px">${m.type === 'suggest' && S.dishes[m.dishId] && m.status !== 'done' ? `<button class="sm" data-act="msgToMenu" data-id="${m.id}">أضف للمنيو</button>` : ''}<button class="sm ghost" data-act="msgReply" data-id="${m.id}">رد</button>${m.status !== 'done' ? `<button class="sm soft" data-act="msgDoneClose" data-id="${m.id}">تم</button>` : ''}</div>`; }
-  else if (M.type === 'adminMsg') { M.save = 'sendAdminMsg'; M.saveLabel = 'إرسال'; h += `<h3>رسالة جديدة</h3><div class="field"><span class="flabel">إلى</span><div class="chips">${[['cook', 'الطباخ'], ['driver', 'السائق'], ['family', 'العائلة']].map(([k, l]) => `<button class="chip ${M.to === k ? 'on' : ''}" data-act="amTo" data-v="${k}">${l}</button>`).join('')}</div></div><div class="field"><textarea data-m="text" placeholder="بالعربي، ويظهر للمستلم مع زر ترجمة">${esc(M.text || '')}</textarea></div>${recHtml()}`; }
+  else if (M.type === 'person') h += modalPerson();
+  else if (M.type === 'linkDev') { M.save = null; const m = S.members.find(x => x.id === M.id); h += `<h3>اربط الجهاز ببطاقة</h3><p class="mute" style="margin:0 0 8px">${esc(m && m.name ? m.name + ' · ' : '')}${esc(m ? ROLE_AR[m.role] || '' : '')}</p><div class="card flat" style="padding:2px 14px">${S.people.map(p => `<div class="row" data-act="linkTo" data-id="${p.id}" style="cursor:pointer"><div class="grow"><div class="nm">${esc(p.name)}</div><div class="meta">${esc(rolesAr(p.roles))}</div></div><span class="mute">›</span></div>`).join('')}</div><p class="small mute" style="margin:8px 2px 0">يأخذ الجهاز اسم الشخص وأدواره، ويبقى داخلاً بدون رمز جديد.</p>`; }
+  else if (M.type === 'adminMsg') { M.save = 'sendAdminMsg'; M.saveLabel = 'إرسال'; h += `<h3>رسالة جديدة</h3><div class="field"><span class="flabel">إلى</span><div class="chips">${[['cook', 'الطباخ'], ['driver', 'السائق'], ['maid', 'العاملة'], ['family', 'العائلة']].map(([k, l]) => `<button class="chip ${M.to === k ? 'on' : ''}" data-act="amTo" data-v="${k}">${l}</button>`).join('')}</div>${S.people.filter(p => !(p.roles || []).includes('admin')).length ? `<div class="lbl" style="margin:8px 2px 4px">أو لشخص معيّن</div><div class="chips">${S.people.filter(p => !(p.roles || []).includes('admin')).map(p => `<button class="chip ${M.to === 'p:' + p.id ? 'on' : ''}" data-act="amTo" data-v="p:${p.id}">${esc(p.name)}</button>`).join('')}</div>` : ''}</div><div class="field"><textarea data-m="text" placeholder="بالعربي، ويظهر للمستلم مع زر ترجمة">${esc(M.text || '')}</textarea></div>${recHtml()}`; }
   else if (M.type === 'pickDate') h += `<h3>أي يوم؟</h3><div class="chips">${Array.from({ length: 14 }, (_, i) => addDays(today(), i)).map(x => `<button class="chip" data-act="msgToMenuDate" data-v="${x}">${esc(wdName(x))} ${esc(fmt(x, { day: 'numeric' }))}</button>`).join('')}</div>`;
   else if (M.type === 'pin') h += `<h3>رمز ${ROLE_AR[M.role]}</h3><div class="field"><label>الرمز الجديد (${M.role === 'admin' ? '6' : '4 إلى 6'} أرقام)</label><input data-m="pin" class="pinbox" inputmode="numeric" maxlength="6" value="${esc(M.pin || '')}"></div><p class="small mute">احفظ الرمز عندك، فالتطبيق لا يعرضه بعد الحفظ.</p>`;
-  else if (M.type === 'invite') h += `<h3>دعوة ${ROLE_AR[M.role]}</h3><div class="field"><label>اكتب رمز ${ROLE_AR[M.role]} ليُضاف للرسالة</label><input data-m="pin" class="pinbox" inputmode="numeric" maxlength="6" value="${esc(M.pin || '')}"></div><div class="field"><label>لغة الرسالة</label><div class="chips">${['hi', 'bn', 'te', 'fil', 'en', 'ar'].map(k => `<button class="chip ${M.lang === k ? 'on' : ''}" data-act="invLang" data-v="${k}">${LANGS[k].label}</button>`).join('')}</div></div>`;
+  else if (M.type === 'invite') h += `<h3>دعوة ${M.who ? esc(M.who) : ROLE_AR[M.role]}</h3>${M.who ? `<p class="note" style="margin:0 0 8px">رمز ${esc(M.who)} الشخصي: <b dir="ltr" style="font-size:20px;letter-spacing:3px">${esc(M.pin)}</b><br><span class="small">احفظه أو أرسله الآن — لن يظهر مرة أخرى (يمكنك إنشاء رمز جديد في أي وقت).</span></p>` : ''}<div class="field"${M.who ? ' style="display:none"' : ''}><label>اكتب رمز ${ROLE_AR[M.role]} ليُضاف للرسالة</label><input data-m="pin" class="pinbox" inputmode="numeric" maxlength="6" value="${esc(M.pin || '')}"></div><div class="field"><label>لغة الرسالة</label><div class="chips">${['hi', 'bn', 'te', 'fil', 'en', 'ar'].map(k => `<button class="chip ${M.lang === k ? 'on' : ''}" data-act="invLang" data-v="${k}">${LANGS[k].label}</button>`).join('')}</div></div>`;
   h += `<div class="btns"><button class="ghost" data-act="closeModal">${esc(t('cancel'))}</button>${M.save ? `<button data-act="${M.save}" ${M.busy ? 'disabled' : ''}>${M.busy ? '<span class="spin"></span>' : esc(M.saveLabel || t('save'))}</button>` : ''}</div>`;
   $sheet.innerHTML = h;
 }
@@ -581,7 +626,7 @@ function modalHelp() {
   const lang = S.view === 'app' ? L() : (S.lang || 'ar'), g = HELP[lang], T = g.t;
   const ol = arr => `<ol style="margin:6px 0 0;padding-inline-start:22px;line-height:1.7">${arr.map(x => `<li>${esc(x)}</li>`).join('')}</ol>`;
   const sec = (title, arr) => `<div class="card flat" style="margin:10px 0"><div class="nm" style="font-family:var(--head)">${esc(title)}</div>${ol(arr)}</div>`;
-  const roles = S.view !== 'app' ? ['family', 'cook', 'driver'] : S.role === 'admin' ? ['admin', 'family', 'cook', 'driver'] : [S.role];
+  const roles = S.view !== 'app' ? ['family', 'cook', 'driver', 'maid'] : S.role === 'admin' ? ['admin', 'family', 'cook', 'driver', 'maid'] : (S.roles.length ? S.roles.filter(r => r !== 'admin') : [S.role]);
   let h = `<div class="center" style="margin-bottom:6px"><div class="logo" style="margin:0 auto">${ICON}</div></div><h3 class="center">${esc(T.about)}</h3><p style="margin:0 0 6px">${esc(g.intro)}</p>${S.view === 'app' ? `<button class="block soft" data-act="openWhatsNew" style="margin:8px 0">✨ ${esc(t('whatsNew'))}</button>` : ''}`;
   h += sec(T.login, g.login);
   const standalone = window.matchMedia && window.matchMedia('(display-mode: standalone)').matches || navigator.standalone;
@@ -683,6 +728,7 @@ async function compress(file) {
 const ACT = {
   setLang(v) { S.lang = v; ls('lang', v); if (S.view === 'app' && S.uid && S.hid) updateDoc(H('members', S.uid), { lang: v }).catch(() => {}); closeModal(); render(); },
   openLang() { openModal({ type: 'lang' }); },
+  async switchRole(v) { if (v === S.role || !S.roles.includes(v)) return; closeModal(); try { await updateDoc(H('members', S.uid), { role: v }); toast(t('r_' + v) + ' ✓'); } catch (e) { toast(errMsg(e)); } },
   openHelp() { openModal({ type: 'help' }); },
   openWhatsNew() { openModal({ type: 'whatsNew', since: 0 }); },
   pushCardOff() { ls('pushCardOff', '1'); render(); },
@@ -707,7 +753,17 @@ const ACT = {
     el.disabled = true; el.innerHTML = '<span class="spin"></span>';
     try { await deleteDoc(doc(db, 'households', code, 'members', S.uid)); } catch (e) { }
     let ok = null;
-    for (const role of ROLES) {
+    try {
+      const lg = await getDoc(doc(db, 'households', code, 'logins', await loginId(code, pin)));
+      if (lg.exists()) {
+        const p = lg.data(), roles = p.roles || [], role = roles.includes(ls('lastRole_' + code)) ? ls('lastRole_' + code) : roles[0];
+        const lang = S.lang || p.lang || (isStaff(role) ? 'en' : 'ar');
+        await setDoc(doc(db, 'households', code, 'members', S.uid), { role, roles, pid: p.pid, name: p.name || '', pinHash: await pinHash(code, 'p_' + p.pid, pin), lang, joinedAt: Date.now() });
+        if (p.name) ls('myName_' + code, p.name);
+        ok = role;
+      }
+    } catch (e) { console.warn('personal login', e); }
+    if (!ok) for (const role of ROLES) {
       try { await setDoc(doc(db, 'households', code, 'members', S.uid), { role, pinHash: await pinHash(code, role, pin), lang: S.lang || 'ar', joinedAt: Date.now() }); ok = role; break; } catch (e) { }
     }
     if (!ok) { el.disabled = false; el.textContent = t('enter'); toast(t('loginBad')); return; }
@@ -767,7 +823,7 @@ const ACT = {
     const base = it ? { itemId: it.id, name_ar: it.name_ar, emoji: it.emoji || '' } : { itemId: null, custom: M.custom.trim(), name_ar: M.custom.trim(), emoji: '🛒' };
     if (M.mode === 'buy') { M = Object.assign({ type: 'buy', sid: null, storeOther: '' }, base, { qty, unit: M.unit, price: M.price || '', store: M.store || 'coop' }); return ACT.saveBuy(); }
     M.busy = true; renderModal();
-    try { await addDoc(HC('shortages'), Object.assign(base, { qty, unit: M.unit, note: (M.note || '').trim(), createdAt: Date.now(), by: S.role })); toast(t('added')); closeModal(); }
+    try { await addDoc(HC('shortages'), Object.assign(base, { qty, unit: M.unit, note: (M.note || '').trim(), createdAt: Date.now(), by: S.role, byUid: S.uid, byName: ls('myName_' + S.hid) || '' })); toast(t('added')); closeModal(); }
     catch (e) { M.busy = false; renderModal(); toast(errMsg(e)); }
   },
   async delShort(v, id) { await deleteDoc(H('shortages', id)); },
@@ -871,11 +927,66 @@ const ACT = {
   recDel() { M.rec = {}; renderModal(); },
   newAdminMsg(v) { openModal({ type: 'adminMsg', to: v || 'cook', text: '' }); },
   amTo(v) { M.to = v; renderModal(); },
+  person(v, id) { confirmKey = null; const p = id && S.people.find(x => x.id === id); openModal(p ? { type: 'person', id, name: p.name, lang: p.lang || 'en', roles: (p.roles || []).slice(), loginId: p.loginId } : { type: 'person', id: null, name: '', lang: 'en', roles: [] }); },
+  personRole(v) { M.roles = M.roles.includes(v) ? M.roles.filter(r => r !== v) : M.roles.concat(v); renderModal(); },
+  personLang(v) { M.lang = v; renderModal(); },
+  async savePerson() {
+    const name = (M.name || '').trim().slice(0, 40), roles = ROLES.filter(r => M.roles.includes(r)), lang = M.lang || 'en';
+    if (!name) return toast('اكتب الاسم'); if (!roles.length) return toast('اختر دوراً واحداً على الأقل');
+    if (S.people.some(p => p.id !== M.id && (p.name || '').trim() === name)) return toast('يوجد شخص بنفس الاسم');
+    M.busy = true; renderModal();
+    try {
+      if (!M.id) {
+        const pid = doc(HC('people')).id, person = { name, lang, roles, createdAt: Date.now() };
+        await setDoc(H('people', pid), person);
+        const pin = await issuePin(pid, person);
+        closeModal(); toast('تمت الإضافة ✓'); ACT.invite(roles[0], null, null, pin, { name, lang });
+      } else {
+        const p = S.people.find(x => x.id === M.id) || {};
+        await updateDoc(H('people', M.id), { name, lang, roles });
+        if (p.loginId) await setDoc(H('logins', p.loginId), { pid: M.id, roles, name, lang });
+        for (const m of S.members.filter(x => x.pid === M.id)) await updateDoc(H('members', m.id), { roles, name, role: roles.includes(m.role) ? m.role : roles[0] });
+        closeModal(); toast('تم الحفظ ✓');
+      }
+    } catch (e) { console.error(e); M.busy = false; renderModal(); toast(errMsg(e)); }
+  },
+  async personPin(v, id) {
+    const p = S.people.find(x => x.id === id); if (!p) return;
+    try { const pin = await issuePin(id, p); closeModal(); ACT.invite((p.roles || ['family'])[0], null, null, pin, { name: p.name, lang: p.lang }); } catch (e) { toast(errMsg(e)); }
+  },
+  async delPerson(v, id) {
+    if (confirmKey !== 'dp' + id) { confirmKey = 'dp' + id; renderModal(); return; }
+    confirmKey = null; const p = S.people.find(x => x.id === id); if (!p) return;
+    try {
+      for (const m of S.members.filter(x => x.pid === id && x.id !== S.uid)) { await deleteDoc(H('tokens', m.id)).catch(() => {}); await deleteDoc(H('members', m.id)); }
+      if (p.loginId) await deleteDoc(H('logins', p.loginId)).catch(() => {});
+      await updateDoc(H('secret', 'pins'), { ['p_' + id]: deleteField() }).catch(() => {});
+      await deleteDoc(H('people', id)); closeModal(); toast('تم الحذف');
+    } catch (e) { toast(errMsg(e)); }
+  },
+  linkDev(v, id) { openModal({ type: 'linkDev', id }); },
+  async linkTo(v, pid) {
+    const p = S.people.find(x => x.id === pid), m = S.members.find(x => x.id === M.id); if (!p || !m) return;
+    const roles = p.roles || [];
+    try { await updateDoc(H('members', m.id), { pid, roles, name: p.name, role: roles.includes(m.role) ? m.role : roles[0] }); closeModal(); toast('تم الربط ✓'); } catch (e) { toast(errMsg(e)); }
+  },
+  async legacyOff() {
+    if (confirmKey !== 'legacyOff') { confirmKey = 'legacyOff'; render(); return; }
+    confirmKey = null;
+    try {
+      const del = {}, ps = {}; ROLES.filter(r => r !== 'admin').forEach(r => { del[r] = deleteField(); ps['pinSet.' + r] = deleteField(); });
+      await updateDoc(H('secret', 'pins'), del); await updateDoc(H(), ps);
+      for (const m of S.members.filter(x => !x.pid && x.role !== 'admin')) { await deleteDoc(H('tokens', m.id)).catch(() => {}); await deleteDoc(H('members', m.id)); }
+      toast('تم إيقاف الرموز المشتركة ✓');
+    } catch (e) { toast(errMsg(e)); }
+  },
   async sendAdminMsg() {
     const text = (M.text || '').trim(), au = (M.rec && M.rec.data) || null;
     if (!text && !au) return toast('اكتب رسالة أو سجّل صوتاً');
     M.busy = true; renderModal();
-    try { await addDoc(HC('messages'), { type: 'admin', to: M.to, text, from: 'admin', fromUid: S.uid, lang: 'ar', at: Date.now(), status: 'new', audio: au, dur: au ? M.rec.dur : null }); toast('تم الإرسال ✓'); closeModal(); }
+    const pp = M.to.startsWith('p:') ? S.people.find(p => p.id === M.to.slice(2)) : null;
+    const dest = pp ? { toPid: pp.id, toName: pp.name } : { to: M.to };
+    try { await addDoc(HC('messages'), Object.assign(dest, { type: 'admin', text, from: 'admin', fromUid: S.uid, lang: 'ar', at: Date.now(), status: 'new', audio: au, dur: au ? M.rec.dur : null })); toast('تم الإرسال ✓'); closeModal(); }
     catch (e) { M.busy = false; renderModal(); toast(errMsg(e)); }
   },
   async msgDone(v, id) { await updateDoc(H('messages', id), { status: 'done', doneAt: Date.now() }); },
@@ -890,11 +1001,11 @@ const ACT = {
     try { await setDoc(H('secret', 'pins'), { [r]: await pinHash(S.hid, r, pin) }, { merge: true }); await updateDoc(H(), { ['pinSet.' + r]: true }); toast('تم حفظ الرمز ✓'); const role = r; closeModal(); if (role !== 'admin') ACT.invite(role, null, null, pin); }
     catch (e) { M.busy = false; renderModal(); toast(errMsg(e)); }
   },
-  invite(r, id, el, pin) { openModal({ type: 'invite', role: r, pin: pin || '', lang: r === 'family' ? 'ar' : 'hi', save: 'sendInvite', saveLabel: 'مشاركة' }); },
+  invite(r, id, el, pin, who) { openModal({ type: 'invite', role: r, pin: pin || '', who: who ? who.name : '', lang: who && who.lang ? who.lang : r === 'family' ? 'ar' : r === 'maid' ? 'fil' : 'hi', save: 'sendInvite', saveLabel: 'مشاركة' }); },
   invLang(v) { M.lang = v; renderModal(); },
   async sendInvite() {
     const l = M.lang, T = I18N[l];
-    const txt = `🍽️ ${T.title}\n${SITE}\n\n${T.houseCode}: ${S.hid}\n${T.yourPin}: ${M.pin || '____'}\n\n${T.loginHint}`;
+    const txt = `${M.who ? '👋 ' + M.who + '\n' : ''}🍽️ ${T.title}\n${SITE}\n\n${T.houseCode}: ${S.hid}\n${T.yourPin}: ${M.pin || '____'}\n\n${T.loginHint}`;
     try { if (navigator.share) await navigator.share({ text: txt }); else { await navigator.clipboard.writeText(txt); toast('تم النسخ'); } closeModal(); } catch (e) { }
   },
   async saveSettings() {
@@ -923,14 +1034,18 @@ window.addEventListener('online', () => { S.offline = false; schedule(); });
 window.addEventListener('offline', () => { S.offline = true; schedule(); });
 
 /* ---------------- data ---------------- */
-function stop() { roleSubsOn = false; for (const k in migDone) delete migDone[k]; unsubs.forEach(u => { try { u(); } catch (e) { } }); unsubs = []; Object.assign(S, { dishes: {}, items: {}, menus: {}, shortages: [], purchases: [], photos: {}, members: [], queue: [], msgs: [], myMsgs: [], toMe: [], ratings: [], rnotes: [], rdraft: {}, loaded: {}, house: null }); genDone = false; }
+function stop() { roleSubsOn = false; for (const k in migDone) delete migDone[k]; unsubs.forEach(u => { try { u(); } catch (e) { } }); unsubs = []; Object.assign(S, { dishes: {}, items: {}, menus: {}, shortages: [], purchases: [], photos: {}, members: [], people: [], queue: [], msgs: [], myMsgs: [], toMe: [], toPid: [], ratings: [], rnotes: [], rdraft: {}, loaded: {}, house: null }); genDone = false; }
 function sub(ref, key, fn, onErr) { unsubs.push(onSnapshot(ref, snap => { fn(snap); S.loaded[key] = true; if (key === 'dishes' || key === 'menu' || key === 'house') maybeGenerate(); schedule(); }, err => { console.warn(key, err); if (onErr) onErr(err); S.loaded[key] = true; schedule(); })); }
 function start(hid) {
-  stop(); S.hid = hid; S.view = 'app'; render();
+  stop(); S.hid = hid; S.role = null; S.view = 'app'; render();
   sub(H('members', S.uid), 'me', snap => {
     if (!snap.exists()) { stop(); ls('hid', null); S.view = 'login'; S.role = null; return; }
-    const m = snap.data(); const changed = S.role !== m.role; S.role = m.role;
-    if (!S.lang) S.lang = m.lang || (m.role === 'cook' || m.role === 'driver' ? 'en' : 'ar');
+    const m = snap.data(); const changed = S.role !== m.role, hadRole = !!S.role; S.role = m.role; S.roles = (m.roles && m.roles.length) ? m.roles : [m.role]; S.pid = m.pid || null;
+    if (m.name && ls('myName_' + hid) !== m.name) ls('myName_' + hid, m.name);
+    else if (!m.name && ls('myName_' + hid) && m.role !== 'admin') updateDoc(H('members', S.uid), { name: ls('myName_' + hid) }).catch(() => {});
+    ls('lastRole_' + hid, m.role);
+    if (changed && hadRole) { start(hid); return; }
+    if (!S.lang) S.lang = m.lang || (isStaff(m.role) ? 'en' : 'ar');
     if (changed) { S.tab = 'today'; attachRoleSubs(); setTimeout(() => enablePush(false), 2500); if (ls('helpSeen_' + m.role)) maybeWhatsNew(); else ls('chSeen_' + m.role, String(CHANGES.length ? CHANGES[0].v : 0)); if (!ls('helpSeen_' + m.role)) { ls('helpSeen_' + m.role, '1'); setTimeout(() => { if (!M) openModal({ type: 'help' }); }, 900); } }
   }, () => { stop(); ls('hid', null); S.view = 'login'; });
 }
@@ -945,14 +1060,16 @@ function attachRoleSubs() {
   sub(HC('dishPhotos'), 'photos', s => { const o = {}; s.forEach(d => { o[d.id] = d.data().data; }); S.photos = o; });
   if (r !== 'family') sub(HC('shortages'), 'shortages', s => { S.shortages = s.docs.map(d => Object.assign({ id: d.id }, d.data())).sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0)); });
   if (r === 'admin' || r === 'driver') sub(query(HC('purchases'), orderBy('ts', 'desc'), limit(1500)), 'purchases', s => { S.purchases = s.docs.map(d => Object.assign({ id: d.id }, d.data())); });
-  if (r !== 'driver') sub(query(HC('ratings'), where('date', '>=', addDays(today(), -60))), 'ratings', s => { S.ratings = s.docs.map(d => Object.assign({ id: d.id }, d.data())); });
+  if (['admin', 'family', 'cook'].includes(r)) sub(query(HC('ratings'), where('date', '>=', addDays(today(), -60))), 'ratings', s => { S.ratings = s.docs.map(d => Object.assign({ id: d.id }, d.data())); });
   if (r === 'admin') sub(query(HC('ratingNotes'), where('date', '>=', addDays(today(), -60))), 'rnotes', s => { S.rnotes = s.docs.map(d => Object.assign({ id: d.id }, d.data())); });
   if (r === 'family') sub(query(HC('ratingNotes'), where('uid', '==', S.uid)), 'rnotes', s => { S.rnotes = s.docs.map(d => Object.assign({ id: d.id }, d.data())); });
   if (r !== 'admin') sub(query(HC('messages'), where('to', '==', r)), 'toMe', s => { S.toMe = s.docs.map(d => Object.assign({ id: d.id }, d.data())); if (M && M.type === 'msgs') renderModal(); });
+  if (r !== 'admin' && S.pid) sub(query(HC('messages'), where('toPid', '==', S.pid)), 'toPid', s => { S.toPid = s.docs.map(d => Object.assign({ id: d.id }, d.data())); if (M && M.type === 'msgs') renderModal(); });
   if (r !== 'admin') sub(query(HC('messages'), where('fromUid', '==', S.uid)), 'myMsgs', s => { S.myMsgs = s.docs.map(d => Object.assign({ id: d.id }, d.data())); if (M && M.type === 'msgs') renderModal(); });
   if (r === 'admin') {
     sub(HC('messages'), 'msgs', s => { S.msgs = s.docs.map(d => Object.assign({ id: d.id }, d.data())); expireVoice(); });
     sub(HC('members'), 'members', s => { S.members = s.docs.map(d => Object.assign({ id: d.id }, d.data())); });
+    sub(HC('people'), 'people', s => { S.people = s.docs.map(d => Object.assign({ id: d.id }, d.data())).sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0)); });
     sub(HC('photoSubmissions'), 'queue', s => { S.queue = s.docs.map(d => Object.assign({ id: d.id }, d.data())); });
   }
 }
@@ -973,7 +1090,7 @@ onAuthStateChanged(auth, async u => {
 });
 if ('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js').then(r => { document.addEventListener('visibilitychange', () => { if (!document.hidden) r.update().catch(() => { }); }); }).catch(() => { });
 /* --- update check: compare baked version with version.json --- */
-const APP_V = '21';
+const APP_V = '22';
 let updShown = false;
 function checkUpdate() {
   if (updShown) return;

@@ -1,10 +1,10 @@
 # Guide content for each language; {key} placeholders take the app's own button labels
 TITLES = {
- 'ar': dict(help='تعليمات', about='عن التطبيق', login='طريقة الدخول', family='للعائلة', cook='للطباخ', driver='للسائق', admin='للإدارة', tip='تنبيه', ok='فهمت'),
- 'en': dict(help='Help', about='About the app', login='How to log in', family='For the family', cook='For the cook', driver='For the driver', admin='For the manager', tip='Note', ok='Got it'),
- 'hi': dict(help='मदद', about='ऐप के बारे में', login='कैसे प्रवेश करें', family='परिवार के लिए', cook='रसोइए के लिए', driver='ड्राइवर के लिए', admin='प्रबंधक के लिए', tip='ध्यान दें', ok='समझ गया'),
- 'bn': dict(help='সাহায্য', about='অ্যাপ সম্পর্কে', login='কীভাবে প্রবেশ করবেন', family='পরিবারের জন্য', cook='রাঁধুনির জন্য', driver='ড্রাইভারের জন্য', admin='ম্যানেজারের জন্য', tip='লক্ষ্য করুন', ok='বুঝেছি'),
- 'fil': dict(help='Tulong', about='Tungkol sa app', login='Paano pumasok', family='Para sa pamilya', cook='Para sa kusinero', driver='Para sa drayber', admin='Para sa tagapamahala', tip='Paalala', ok='Sige'),
+ 'ar': dict(help='تعليمات', about='عن التطبيق', login='طريقة الدخول', family='للعائلة', cook='للطباخ', driver='للسائق', maid='للعاملة المنزلية', admin='للإدارة', tip='تنبيه', ok='فهمت'),
+ 'en': dict(help='Help', about='About the app', login='How to log in', family='For the family', cook='For the cook', driver='For the driver', maid='For the housemaid', admin='For the manager', tip='Note', ok='Got it'),
+ 'hi': dict(help='मदद', about='ऐप के बारे में', login='कैसे प्रवेश करें', family='परिवार के लिए', cook='रसोइए के लिए', driver='ड्राइवर के लिए', maid='घरेलू कामगार के लिए', admin='प्रबंधक के लिए', tip='ध्यान दें', ok='समझ गया'),
+ 'bn': dict(help='সাহায্য', about='অ্যাপ সম্পর্কে', login='কীভাবে প্রবেশ করবেন', family='পরিবারের জন্য', cook='রাঁধুনির জন্য', driver='ড্রাইভারের জন্য', maid='গৃহকর্মীর জন্য', admin='ম্যানেজারের জন্য', tip='লক্ষ্য করুন', ok='বুঝেছি'),
+ 'fil': dict(help='Tulong', about='Tungkol sa app', login='Paano pumasok', family='Para sa pamilya', cook='Para sa kusinero', driver='Para sa drayber', maid='Para sa kasambahay', admin='Para sa tagapamahala', tip='Paalala', ok='Sige'),
 }
 G = {
 'ar': dict(
@@ -13,6 +13,7 @@ G = {
  family=['ترى غداء اليوم والغد والأيام القادمة','اضغط 💬 لتقترح طبقاً أو ترسل رسالة للإدارة','يظهر لك الرد وحالة طلبك في نفس المكان'],
  cook=['افتح تبويب «{tabToday}» لترى غداء اليوم وملاحظات العائلة','بعد ما تقرأ المنيو اضغط «{gotIt}»','إذا نقص شيء: تبويب «{tabList}» ثم «{addMissing}» واختر السلعة والكمية','تبويب «{tabWeek}» يعرض غداء الغد للتحضير','إذا ظهر زر «{photoAsk}» صوّر الطبق عند التقديم','اضغط 💬 لترسل رسالة للإدارة'],
  driver=['ترى قائمة الأشياء المطلوب شراؤها','بعد الشراء اضغط «{markBought}» واكتب الكمية والسعر الإجمالي والمكان، ثم احفظ','اشتريت شيئاً غير موجود في القائمة؟ اضغط «{extraPurchase}»','زر «{share}» يرسل القائمة على واتساب','اضغط 💬 لترسل رسالة للإدارة'],
+ maid=["تبويب «القائمة» يعرض كل ما هو مطلوب شراؤه للبيت", "إذا نقص شيء (منظفات، مناديل، صابون...) اضغط «أضف ناقص» واختر السلعة والكمية", "يصل طلبك للسائق مباشرة، وتقدر تحذف ما أضفته أنت", "تبويب «اليوم» يعرض غداء اليوم والغد", "اضغط 💬 لترسل رسالة للإدارة، كتابة أو صوتاً"],
  admin=['المنيو: يتجهز تلقائياً لأسبوعين. اضغط أي يوم لتعديله أو لإضافة ملاحظة للطباخ','الطلبات: اقتراحات ورسائل العائلة والعمالة، وتضيف الطبق المقترح للمنيو بلمسة','النواقص: كل ما طلبه الطباخ، وتقدر تسجّل شراء بنفسك','التقارير: مصروف الشهر، وأسعار كل سلعة، وتنبيه عند ارتفاع السعر','المكتبة: الأطباق والسلع، والصور التي صوّرها الطباخ بانتظار اعتمادك','الإعدادات: رموز الدخول والدعوات، والأجهزة الداخلة، وتركيبة الغداء اليومي'],
  tip='لا تعطِ رمزك لأحد. إذا نسيته اطلبه من صاحب البيت.'),
 'en': dict(
@@ -21,6 +22,7 @@ G = {
  family=["See today's lunch, tomorrow's and the coming days",'Tap 💬 to suggest a dish or send a message to the manager','You will see the reply and the status of your request there'],
  cook=["Open the “{tabToday}” tab to see today's lunch and the family's notes",'After reading the menu, tap “{gotIt}”','If something is missing: “{tabList}” tab, then “{addMissing}”, and choose the item and quantity',"The “{tabWeek}” tab shows tomorrow's lunch so you can prepare",'If you see “{photoAsk}”, take a photo when you serve the dish','Tap 💬 to send a message to the manager'],
  driver=['See the list of things to buy','After buying, tap “{markBought}”, enter the quantity, total price and store, then save','Bought something not on the list? Tap “{extraPurchase}”','The “{share}” button sends the list on WhatsApp','Tap 💬 to send a message to the manager'],
+ maid=["The “List” tab shows everything the house needs to buy", "If something runs out (cleaning supplies, tissues, soap...), tap “Add missing item” and choose the item and quantity", "Your request goes straight to the driver, and you can delete what you added", "The “Today” tab shows today’s and tomorrow’s lunch", "Tap 💬 to send a text or voice message to the manager"],
  tip='Do not share your PIN. If you forget it, ask the home owner.'),
 'hi': dict(
  intro='घर का खाना एक आसान ऐप है: रोज़ का मेन्यू तैयार, रसोई में कम पड़ी चीज़ें ड्राइवर तक पहुंचती हैं, और खरीद की कीमतें दर्ज होती हैं।',
@@ -28,6 +30,7 @@ G = {
  family=['आज, कल और आने वाले दिनों का खाना देखें','डिश सुझाने या प्रबंधक को संदेश भेजने के लिए 💬 दबाएं','जवाब और आपके अनुरोध की स्थिति वहीं दिखेगी'],
  cook=['“{tabToday}” टैब में आज का खाना और परिवार के नोट देखें','मेन्यू पढ़ने के बाद “{gotIt}” दबाएं','कुछ कम हो तो: “{tabList}” टैब, फिर “{addMissing}”, और सामान व मात्रा चुनें','“{tabWeek}” टैब में तैयारी के लिए कल का खाना दिखता है','अगर “{photoAsk}” दिखे, तो परोसते समय डिश की फ़ोटो लें','प्रबंधक को संदेश भेजने के लिए 💬 दबाएं'],
  driver=['खरीदने वाली चीज़ों की सूची देखें','खरीदने के बाद “{markBought}” दबाएं, मात्रा, कुल कीमत और दुकान लिखें, फिर सेव करें','सूची से बाहर कुछ खरीदा? “{extraPurchase}” दबाएं','“{share}” बटन से सूची WhatsApp पर भेजें','प्रबंधक को संदेश भेजने के लिए 💬 दबाएं'],
+ maid=["“सूची” टैब में घर के लिए खरीदने वाली सभी चीज़ें दिखती हैं", "कुछ खत्म हो जाए (सफ़ाई का सामान, टिश्यू, साबुन...) तो “कमी वाला सामान जोड़ें” दबाएं और सामान व मात्रा चुनें", "आपका अनुरोध सीधे ड्राइवर तक जाता है, और आप अपना जोड़ा हुआ हटा सकते हैं", "“आज” टैब में आज और कल का खाना दिखता है", "प्रबंधक को लिखकर या आवाज़ में संदेश भेजने के लिए 💬 दबाएं"],
  tip='अपना पिन किसी को न बताएं। भूल जाएं तो घर के मालिक से पूछें।'),
 'bn': dict(
  intro='বাড়ির খাবার একটি সহজ অ্যাপ: প্রতিদিনের মেনু তৈরি থাকে, রান্নাঘরে যা লাগবে তা ড্রাইভারের কাছে যায়, আর কেনাকাটার দাম লেখা থাকে।',
@@ -35,6 +38,7 @@ G = {
  family=['আজ, আগামীকাল ও সামনের দিনগুলোর খাবার দেখুন','খাবার প্রস্তাব করতে বা ম্যানেজারকে বার্তা পাঠাতে 💬 চাপুন','উত্তর ও আপনার অনুরোধের অবস্থা সেখানেই দেখবেন'],
  cook=['“{tabToday}” ট্যাবে আজকের খাবার ও পরিবারের নোট দেখুন','মেনু পড়ার পর “{gotIt}” চাপুন','কিছু না থাকলে: “{tabList}” ট্যাব, তারপর “{addMissing}”, এবং জিনিস ও পরিমাণ বেছে নিন','“{tabWeek}” ট্যাবে প্রস্তুতির জন্য আগামীকালের খাবার দেখায়','“{photoAsk}” দেখালে, পরিবেশনের সময় খাবারের ছবি তুলুন','ম্যানেজারকে বার্তা পাঠাতে 💬 চাপুন'],
  driver=['কী কী কিনতে হবে তার তালিকা দেখুন','কেনার পর “{markBought}” চাপুন, পরিমাণ, মোট দাম ও দোকান লিখে সেভ করুন','তালিকার বাইরে কিছু কিনেছেন? “{extraPurchase}” চাপুন','“{share}” বোতাম দিয়ে তালিকা WhatsApp-এ পাঠান','ম্যানেজারকে বার্তা পাঠাতে 💬 চাপুন'],
+ maid=["“তালিকা” ট্যাবে বাড়ির জন্য যা কিনতে হবে সব দেখা যায়", "কিছু শেষ হলে (পরিষ্কারের জিনিস, টিস্যু, সাবান...) “যা নেই তা যোগ করুন” চাপুন এবং জিনিস ও পরিমাণ বেছে নিন", "আপনার অনুরোধ সরাসরি ড্রাইভারের কাছে যায়, আর আপনি নিজের যোগ করা জিনিস মুছতে পারবেন", "“আজ” ট্যাবে আজ ও আগামীকালের খাবার দেখা যায়", "ম্যানেজারকে লিখে বা ভয়েসে বার্তা পাঠাতে 💬 চাপুন"],
  tip='আপনার পিন কাউকে বলবেন না। ভুলে গেলে বাড়ির মালিককে জিজ্ঞেস করুন।'),
 'fil': dict(
  intro='Ang Tanghalian sa Bahay ay simpleng app: handa ang menu araw-araw, ang kulang sa kusina ay napupunta sa drayber, at nakatala ang presyo ng mga binili.',
@@ -42,6 +46,7 @@ G = {
  family=['Tingnan ang tanghalian ngayon, bukas at sa mga susunod na araw','Pindutin ang 💬 para magmungkahi ng ulam o magpadala ng mensahe sa tagapamahala','Makikita mo roon ang sagot at ang estado ng iyong kahilingan'],
  cook=['Buksan ang tab na “{tabToday}” para makita ang tanghalian ngayon at ang paalala ng pamilya','Pagkabasa ng menu, pindutin ang “{gotIt}”','Kung may kulang: tab na “{tabList}”, saka “{addMissing}”, at piliin ang item at dami','Ang tab na “{tabWeek}” ay nagpapakita ng tanghalian bukas para makapaghanda','Kung makita ang “{photoAsk}”, kunan ng litrato ang ulam kapag inihain','Pindutin ang 💬 para magpadala ng mensahe sa tagapamahala'],
  driver=['Tingnan ang listahan ng bibilhin','Pagkabili, pindutin ang “{markBought}”, ilagay ang dami, kabuuang presyo at tindahan, saka i-save','May binili na wala sa listahan? Pindutin ang “{extraPurchase}”','Ang button na “{share}” ay nagpapadala ng listahan sa WhatsApp','Pindutin ang 💬 para magpadala ng mensahe sa tagapamahala'],
+ maid=["Ang tab na “Listahan” ay nagpapakita ng lahat ng kailangang bilhin para sa bahay", "Kapag may naubos (panlinis, tissue, sabon...), pindutin ang “Idagdag ang kulang” at piliin ang item at dami", "Diretso sa drayber ang iyong hiling, at puwede mong burahin ang idinagdag mo", "Ang tab na “Ngayon” ay nagpapakita ng tanghalian ngayon at bukas", "Pindutin ang 💬 para magpadala ng text o voice message sa tagapamahala"],
  tip='Huwag ibahagi ang iyong PIN. Kung makalimutan, magtanong sa may-ari ng bahay.'),
 }
 import json,re

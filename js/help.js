@@ -28,13 +28,21 @@ export const HELP = {
 "زر «مشاركة» يرسل القائمة على واتساب",
 "اضغط 💬 لترسل رسالة للإدارة"
 ],
+"maid": [
+"تبويب «القائمة» يعرض كل ما هو مطلوب شراؤه للبيت",
+"إذا نقص شيء (منظفات، مناديل، صابون...) اضغط «أضف ناقص» واختر السلعة والكمية",
+"يصل طلبك للسائق مباشرة، وتقدر تحذف ما أضفته أنت",
+"تبويب «اليوم» يعرض غداء اليوم والغد",
+"اضغط 💬 لترسل رسالة للإدارة، كتابة أو صوتاً"
+],
 "admin": [
 "المنيو: يتجهز تلقائياً لأسبوعين. اضغط أي يوم لتعديله أو لإضافة ملاحظة للطباخ",
 "الطلبات: اقتراحات ورسائل العائلة والعمالة، وتضيف الطبق المقترح للمنيو بلمسة",
 "النواقص: كل ما طلبه الطباخ، وتقدر تسجّل شراء بنفسك",
 "التقارير: مصروف الشهر، وأسعار كل سلعة، وتنبيه عند ارتفاع السعر",
 "المكتبة: الأطباق والسلع، والصور التي صوّرها الطباخ بانتظار اعتمادك",
-"الإعدادات: رموز الدخول والدعوات، والأجهزة الداخلة، وتركيبة الغداء اليومي"
+"الإعدادات: رموز الدخول والدعوات، والأجهزة الداخلة، وتركيبة الغداء اليومي",
+"الأشخاص (في الإعدادات): أضف كل شخص ببطاقة فيها اسمه ولغته ودوره أو أكثر من دور، وله رمز دخول خاص. «اربط» يضم جهازاً داخلاً لبطاقة صاحبه بدون دخول جديد."
 ],
 "tip": "لا تعطِ رمزك لأحد. إذا نسيته اطلبه من صاحب البيت.",
 "t": {
@@ -46,7 +54,8 @@ export const HELP = {
 "driver": "للسائق",
 "admin": "للإدارة",
 "tip": "تنبيه",
-"ok": "فهمت"
+"ok": "فهمت",
+"maid": "للعاملة المنزلية"
 },
 "install": {
 "title": "إضافة التطبيق للشاشة الرئيسية",
@@ -95,6 +104,13 @@ export const HELP = {
 "The “Share” button sends the list on WhatsApp",
 "Tap 💬 to send a message to the manager"
 ],
+"maid": [
+"The “List” tab shows everything the house needs to buy",
+"If something runs out (cleaning supplies, tissues, soap...), tap “Add missing item” and choose the item and quantity",
+"Your request goes straight to the driver, and you can delete what you added",
+"The “Today” tab shows today’s and tomorrow’s lunch",
+"Tap 💬 to send a text or voice message to the manager"
+],
 "tip": "Do not share your PIN. If you forget it, ask the home owner.",
 "t": {
 "help": "Help",
@@ -105,7 +121,8 @@ export const HELP = {
 "driver": "For the driver",
 "admin": "For the manager",
 "tip": "Note",
-"ok": "Got it"
+"ok": "Got it",
+"maid": "For the housemaid"
 },
 "install": {
 "title": "Add the app to your home screen",
@@ -154,6 +171,13 @@ export const HELP = {
 "“शेयर करें” बटन से सूची WhatsApp पर भेजें",
 "प्रबंधक को संदेश भेजने के लिए 💬 दबाएं"
 ],
+"maid": [
+"“सूची” टैब में घर के लिए खरीदने वाली सभी चीज़ें दिखती हैं",
+"कुछ खत्म हो जाए (सफ़ाई का सामान, टिश्यू, साबुन...) तो “कमी वाला सामान जोड़ें” दबाएं और सामान व मात्रा चुनें",
+"आपका अनुरोध सीधे ड्राइवर तक जाता है, और आप अपना जोड़ा हुआ हटा सकते हैं",
+"“आज” टैब में आज और कल का खाना दिखता है",
+"प्रबंधक को लिखकर या आवाज़ में संदेश भेजने के लिए 💬 दबाएं"
+],
 "tip": "अपना पिन किसी को न बताएं। भूल जाएं तो घर के मालिक से पूछें।",
 "t": {
 "help": "मदद",
@@ -164,7 +188,8 @@ export const HELP = {
 "driver": "ड्राइवर के लिए",
 "admin": "प्रबंधक के लिए",
 "tip": "ध्यान दें",
-"ok": "समझ गया"
+"ok": "समझ गया",
+"maid": "घरेलू कामगार के लिए"
 },
 "install": {
 "title": "ऐप को होम स्क्रीन पर जोड़ें",
@@ -213,6 +238,13 @@ export const HELP = {
 "“শেয়ার করুন” বোতাম দিয়ে তালিকা WhatsApp-এ পাঠান",
 "ম্যানেজারকে বার্তা পাঠাতে 💬 চাপুন"
 ],
+"maid": [
+"“তালিকা” ট্যাবে বাড়ির জন্য যা কিনতে হবে সব দেখা যায়",
+"কিছু শেষ হলে (পরিষ্কারের জিনিস, টিস্যু, সাবান...) “যা নেই তা যোগ করুন” চাপুন এবং জিনিস ও পরিমাণ বেছে নিন",
+"আপনার অনুরোধ সরাসরি ড্রাইভারের কাছে যায়, আর আপনি নিজের যোগ করা জিনিস মুছতে পারবেন",
+"“আজ” ট্যাবে আজ ও আগামীকালের খাবার দেখা যায়",
+"ম্যানেজারকে লিখে বা ভয়েসে বার্তা পাঠাতে 💬 চাপুন"
+],
 "tip": "আপনার পিন কাউকে বলবেন না। ভুলে গেলে বাড়ির মালিককে জিজ্ঞেস করুন।",
 "t": {
 "help": "সাহায্য",
@@ -223,7 +255,8 @@ export const HELP = {
 "driver": "ড্রাইভারের জন্য",
 "admin": "ম্যানেজারের জন্য",
 "tip": "লক্ষ্য করুন",
-"ok": "বুঝেছি"
+"ok": "বুঝেছি",
+"maid": "গৃহকর্মীর জন্য"
 },
 "install": {
 "title": "অ্যাপটি হোম স্ক্রিনে যোগ করুন",
@@ -272,6 +305,13 @@ export const HELP = {
 "Ang button na “Ibahagi” ay nagpapadala ng listahan sa WhatsApp",
 "Pindutin ang 💬 para magpadala ng mensahe sa tagapamahala"
 ],
+"maid": [
+"Ang tab na “Listahan” ay nagpapakita ng lahat ng kailangang bilhin para sa bahay",
+"Kapag may naubos (panlinis, tissue, sabon...), pindutin ang “Idagdag ang kulang” at piliin ang item at dami",
+"Diretso sa drayber ang iyong hiling, at puwede mong burahin ang idinagdag mo",
+"Ang tab na “Ngayon” ay nagpapakita ng tanghalian ngayon at bukas",
+"Pindutin ang 💬 para magpadala ng text o voice message sa tagapamahala"
+],
 "tip": "Huwag ibahagi ang iyong PIN. Kung makalimutan, magtanong sa may-ari ng bahay.",
 "t": {
 "help": "Tulong",
@@ -282,7 +322,8 @@ export const HELP = {
 "driver": "Para sa drayber",
 "admin": "Para sa tagapamahala",
 "tip": "Paalala",
-"ok": "Sige"
+"ok": "Sige",
+"maid": "Para sa kasambahay"
 },
 "install": {
 "title": "Idagdag ang app sa home screen",
@@ -331,6 +372,13 @@ export const HELP = {
 "“షేర్ చేయండి” బటన్ జాబితాను WhatsApp కు పంపుతుంది",
 "మేనేజర్‌కు సందేశం పంపడానికి 💬 నొక్కండి"
 ],
+"maid": [
+"“జాబితా” ట్యాబ్‌లో ఇంటికి కొనవలసినవన్నీ కనిపిస్తాయి",
+"ఏదైనా అయిపోతే (శుభ్రపరిచే సామాన్లు, టిష్యూ, సబ్బు...) “లేని వస్తువు జోడించండి” నొక్కి వస్తువు, పరిమాణం ఎంచుకోండి",
+"మీ అభ్యర్థన నేరుగా డ్రైవర్‌కు వెళ్తుంది, మీరు జోడించినవి తొలగించగలరు",
+"“ఈరోజు” ట్యాబ్‌లో ఈరోజు, రేపటి భోజనం కనిపిస్తుంది",
+"మేనేజర్‌కు రాసి లేదా వాయిస్ సందేశం పంపడానికి 💬 నొక్కండి"
+],
 "tip": "మీ PIN ఎవరికీ చెప్పకండి. మర్చిపోతే ఇంటి యజమానిని అడగండి.",
 "t": {
 "help": "సహాయం",
@@ -341,7 +389,8 @@ export const HELP = {
 "driver": "డ్రైవర్ కోసం",
 "admin": "మేనేజర్ కోసం",
 "tip": "గమనించండి",
-"ok": "అర్థమైంది"
+"ok": "అర్థమైంది",
+"maid": "ఇంటి పనిమనిషి కోసం"
 },
 "install": {
 "title": "యాప్‌ను హోమ్ స్క్రీన్‌కు జోడించండి",
