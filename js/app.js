@@ -3,10 +3,11 @@ import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.2/fireba
 import { getAuth, signInAnonymously, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
 import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager, doc, getDoc, setDoc, updateDoc, deleteDoc, collection, addDoc, onSnapshot, query, where, orderBy, limit, writeBatch } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 import { getMessaging, getToken, onMessage, isSupported as fcmSupported } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-messaging.js';
-import { firebaseConfig, vapidKey } from './firebase-config.js?v=20';
-import { I18N, QUICK_NOTES } from './i18n.js?v=20';
-import { DISHES, ITEMS, SEED_ITEMS_V, NEW_ITEMS_V2 } from './seed.js?v=20';
-import { HELP } from './help.js?v=20';
+import { firebaseConfig, vapidKey } from './firebase-config.js?v=21';
+import { I18N, QUICK_NOTES } from './i18n.js?v=21';
+import { DISHES, ITEMS, SEED_ITEMS_V, NEW_ITEMS_V2 } from './seed.js?v=21';
+import { CHANGES } from './changes.js?v=21';
+import { HELP } from './help.js?v=21';
 
 const fbApp = initializeApp(firebaseConfig);
 const auth = getAuth(fbApp);
@@ -207,6 +208,19 @@ function weekList(start, n, admin) {
   return `<div class="card flat" style="padding:2px 14px">${h}</div>`;
 }
 
+
+/* --- what's new --- */
+const chFor = (c, r, l) => { const x = c[r]; if (!x) return null; return x[l] || x.en || x.ar || null; };
+function whatsNewList(sinceV) { const r = S.role, l = L(); return CHANGES.filter(c => c.v > sinceV).map(c => ({ c, lines: chFor(c, r, l) })).filter(x => x.lines && x.lines.length); }
+function maybeWhatsNew() {
+  const k = 'chSeen_' + S.role, seen = ls(k), top = CHANGES.length ? CHANGES[0].v : 0;
+  const list = whatsNewList(+(seen || 0)); ls(k, String(top));
+  if (list.length) setTimeout(() => { if (!M) openModal({ type: 'whatsNew', since: +(seen || 0) }); }, 1200);
+}
+function modalWhatsNew() {
+  const list = whatsNewList(M.since || 0), all = list.length ? list : whatsNewList(0).slice(0, 1);
+  return `<h3>✨ ${esc(t('whatsNew'))}</h3>${all.map(x => `<div class="meta" style="margin:6px 2px">${esc(fmt(x.c.date, { day: 'numeric', month: 'long' }))}</div><div class="card flat wn">${x.lines.map(li => `<p>${esc(li)}</p>`).join('')}</div>`).join('')}`;
+}
 
 /* --- lunch ratings --- */
 function ratingsReport() {
@@ -552,6 +566,7 @@ function renderModal() {
   else if (M.type === 'msgs') h += modalMsgs();
   else if (M.type === 'compose') h += modalCompose();
   else if (M.type === 'reply') h += `<h3>رد على الرسالة</h3><div class="field"><textarea data-m="reply" placeholder="يظهر للمرسل مع زر ترجمة">${esc(M.reply || '')}</textarea></div>${recHtml()}`;
+  else if (M.type === 'whatsNew') h += modalWhatsNew();
   else if (M.type === 'msgView') { const m = S.msgs.find(x => x.id === M.id); if (m) h += `<div class="mhead"><span class="mav ${m.from}">${esc(((m.fromName || ROLE_AR[m.from] || '?').trim()[0] || '?').toUpperCase())}</span><div class="grow"><div class="mname" style="white-space:normal">${esc(m.fromName || ROLE_AR[m.from] || '')}</div><div class="meta">${esc(ROLE_AR[m.from] || '')} · ${m.type === 'suggest' ? '🍽️ اقتراح طبق' : '💬 رسالة'} · ${esc(timeAgo(m.at))}</div></div></div>${msgDish(m, 'ar')}${audioHtml(m.audio, m.audioExpired)}${m.text ? `<div class="note" style="margin-top:12px;white-space:pre-wrap;font-size:17px" dir="auto">${esc(m.text)}</div>${m.lang !== 'ar' ? `<a class="block" style="display:block;text-align:center;margin-top:10px" href="${trLink(m.text, 'auto', 'ar')}" target="_blank" rel="noopener">🌐 ترجم للعربي ›</a>` : ''}` : ''}${m.reply || m.replyAudio ? `<div class="note" style="margin-top:12px"><b>ردّك</b>${esc(m.reply || '')}${audioHtml(m.replyAudio)}</div>` : ''}<div class="btns" style="margin-top:14px">${m.type === 'suggest' && S.dishes[m.dishId] && m.status !== 'done' ? `<button class="sm" data-act="msgToMenu" data-id="${m.id}">أضف للمنيو</button>` : ''}<button class="sm ghost" data-act="msgReply" data-id="${m.id}">رد</button>${m.status !== 'done' ? `<button class="sm soft" data-act="msgDoneClose" data-id="${m.id}">تم</button>` : ''}</div>`; }
   else if (M.type === 'adminMsg') { M.save = 'sendAdminMsg'; M.saveLabel = 'إرسال'; h += `<h3>رسالة جديدة</h3><div class="field"><span class="flabel">إلى</span><div class="chips">${[['cook', 'الطباخ'], ['driver', 'السائق'], ['family', 'العائلة']].map(([k, l]) => `<button class="chip ${M.to === k ? 'on' : ''}" data-act="amTo" data-v="${k}">${l}</button>`).join('')}</div></div><div class="field"><textarea data-m="text" placeholder="بالعربي، ويظهر للمستلم مع زر ترجمة">${esc(M.text || '')}</textarea></div>${recHtml()}`; }
   else if (M.type === 'pickDate') h += `<h3>أي يوم؟</h3><div class="chips">${Array.from({ length: 14 }, (_, i) => addDays(today(), i)).map(x => `<button class="chip" data-act="msgToMenuDate" data-v="${x}">${esc(wdName(x))} ${esc(fmt(x, { day: 'numeric' }))}</button>`).join('')}</div>`;
@@ -567,7 +582,7 @@ function modalHelp() {
   const ol = arr => `<ol style="margin:6px 0 0;padding-inline-start:22px;line-height:1.7">${arr.map(x => `<li>${esc(x)}</li>`).join('')}</ol>`;
   const sec = (title, arr) => `<div class="card flat" style="margin:10px 0"><div class="nm" style="font-family:var(--head)">${esc(title)}</div>${ol(arr)}</div>`;
   const roles = S.view !== 'app' ? ['family', 'cook', 'driver'] : S.role === 'admin' ? ['admin', 'family', 'cook', 'driver'] : [S.role];
-  let h = `<div class="center" style="margin-bottom:6px"><div class="logo" style="margin:0 auto">${ICON}</div></div><h3 class="center">${esc(T.about)}</h3><p style="margin:0 0 6px">${esc(g.intro)}</p>`;
+  let h = `<div class="center" style="margin-bottom:6px"><div class="logo" style="margin:0 auto">${ICON}</div></div><h3 class="center">${esc(T.about)}</h3><p style="margin:0 0 6px">${esc(g.intro)}</p>${S.view === 'app' ? `<button class="block soft" data-act="openWhatsNew" style="margin:8px 0">✨ ${esc(t('whatsNew'))}</button>` : ''}`;
   h += sec(T.login, g.login);
   const standalone = window.matchMedia && window.matchMedia('(display-mode: standalone)').matches || navigator.standalone;
   if (!standalone && g.install) {
@@ -669,6 +684,7 @@ const ACT = {
   setLang(v) { S.lang = v; ls('lang', v); if (S.view === 'app' && S.uid && S.hid) updateDoc(H('members', S.uid), { lang: v }).catch(() => {}); closeModal(); render(); },
   openLang() { openModal({ type: 'lang' }); },
   openHelp() { openModal({ type: 'help' }); },
+  openWhatsNew() { openModal({ type: 'whatsNew', since: 0 }); },
   pushCardOff() { ls('pushCardOff', '1'); render(); },
   async notifEnable() { await enablePush(true); if (M) renderModal(); render(); },
   openWa(v, id) { const prev = M && M.type === 'dish' ? M : null; openModal({ type: 'wa', kind: v || 'today', lang: ls('waLang') || 'ar', dishId: id || null, extra: '', back: prev }); },
@@ -915,7 +931,7 @@ function start(hid) {
     if (!snap.exists()) { stop(); ls('hid', null); S.view = 'login'; S.role = null; return; }
     const m = snap.data(); const changed = S.role !== m.role; S.role = m.role;
     if (!S.lang) S.lang = m.lang || (m.role === 'cook' || m.role === 'driver' ? 'en' : 'ar');
-    if (changed) { S.tab = 'today'; attachRoleSubs(); setTimeout(() => enablePush(false), 2500); if (!ls('helpSeen_' + m.role)) { ls('helpSeen_' + m.role, '1'); setTimeout(() => { if (!M) openModal({ type: 'help' }); }, 900); } }
+    if (changed) { S.tab = 'today'; attachRoleSubs(); setTimeout(() => enablePush(false), 2500); if (ls('helpSeen_' + m.role)) maybeWhatsNew(); else ls('chSeen_' + m.role, String(CHANGES.length ? CHANGES[0].v : 0)); if (!ls('helpSeen_' + m.role)) { ls('helpSeen_' + m.role, '1'); setTimeout(() => { if (!M) openModal({ type: 'help' }); }, 900); } }
   }, () => { stop(); ls('hid', null); S.view = 'login'; });
 }
 let roleSubsOn = false;
@@ -957,7 +973,7 @@ onAuthStateChanged(auth, async u => {
 });
 if ('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js').then(r => { document.addEventListener('visibilitychange', () => { if (!document.hidden) r.update().catch(() => { }); }); }).catch(() => { });
 /* --- update check: compare baked version with version.json --- */
-const APP_V = '20';
+const APP_V = '21';
 let updShown = false;
 function checkUpdate() {
   if (updShown) return;

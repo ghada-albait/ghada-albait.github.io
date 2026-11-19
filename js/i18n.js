@@ -1,6 +1,8 @@
 // Interface translations (ar, en, hi, bn, fil)
 export const I18N = {
 "ar": {
+"whatsNew": "ما الجديد",
+"gotItBtn": "فهمت",
 "rateLunch": "قيّم غداء اليوم",
 "rateDishes": "كل طبق",
 "yourComment": "تعليق (يصل للإدارة فقط)",
@@ -154,6 +156,8 @@ export const I18N = {
 "toTop": "للأعلى"
 },
 "en": {
+"whatsNew": "What's new",
+"gotItBtn": "Got it",
 "rateLunch": "Rate today's lunch",
 "rateDishes": "Each dish",
 "yourComment": "Comment (only the manager sees it)",
@@ -307,6 +311,8 @@ export const I18N = {
 "toTop": "To top"
 },
 "hi": {
+"whatsNew": "नया क्या है",
+"gotItBtn": "समझ गया",
 "rateLunch": "आज के खाने को रेटिंग दें",
 "rateDishes": "हर व्यंजन",
 "yourComment": "टिप्पणी (सिर्फ़ प्रबंधक देखेंगे)",
@@ -460,6 +466,8 @@ export const I18N = {
 "toTop": "ऊपर"
 },
 "bn": {
+"whatsNew": "নতুন কী আছে",
+"gotItBtn": "বুঝেছি",
 "rateLunch": "আজকের খাবারের রেটিং দিন",
 "rateDishes": "প্রতিটি পদ",
 "yourComment": "মন্তব্য (শুধু ম্যানেজার দেখবেন)",
@@ -613,6 +621,8 @@ export const I18N = {
 "toTop": "উপরে"
 },
 "fil": {
+"whatsNew": "Ano ang bago",
+"gotItBtn": "Sige",
 "rateLunch": "I-rate ang tanghalian ngayon",
 "rateDishes": "Bawat ulam",
 "yourComment": "Komento (tagapamahala lang ang makakakita)",
@@ -766,6 +776,8 @@ export const I18N = {
 "toTop": "Itaas"
 },
 "te": {
+"whatsNew": "కొత్తగా ఏముంది",
+"gotItBtn": "అర్థమైంది",
 "rateLunch": "ఈరోజు భోజనానికి రేటింగ్ ఇవ్వండి",
 "rateDishes": "ప్రతి వంటకం",
 "yourComment": "వ్యాఖ్య (మేనేజర్ మాత్రమే చూస్తారు)",
