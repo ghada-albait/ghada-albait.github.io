@@ -56,3 +56,31 @@ def filled():
         out[l]={k:(f(v) if isinstance(v,str) else [f(i) for i in v]) for k,v in g.items()}
         out[l]['t']=TITLES[l]
     return out
+
+INSTALL = {
+ 'ar': dict(title='إضافة التطبيق للشاشة الرئيسية', ios_t='على الآيفون', android_t='على الأندرويد',
+  ios=['افتح الرابط في متصفح Safari','اضغط زر المشاركة (مربع وسهم للأعلى) أسفل الشاشة','انزل واختر «إضافة إلى الشاشة الرئيسية» (Add to Home Screen)','اضغط «إضافة» (Add) أعلى الشاشة'],
+  android=['افتح الرابط في متصفح Chrome','اضغط النقاط الثلاث ⋮ أعلى الشاشة','اختر «تثبيت التطبيق» (Install app) أو «إضافة إلى الشاشة الرئيسية» (Add to Home screen)','اضغط «تثبيت» (Install)'],
+  done='بعدها تظهر أيقونة القِدر على شاشة جوالك وتفتح التطبيق مباشرة.'),
+ 'en': dict(title='Add the app to your home screen', ios_t='On iPhone', android_t='On Android',
+  ios=['Open the link in Safari','Tap the Share button (square with an up arrow) at the bottom','Scroll down and tap “Add to Home Screen”','Tap “Add” at the top'],
+  android=['Open the link in Chrome','Tap the three dots ⋮ at the top','Tap “Install app” or “Add to Home screen”','Tap “Install”'],
+  done='The pot icon will appear on your phone screen and open the app directly.'),
+ 'hi': dict(title='ऐप को होम स्क्रीन पर जोड़ें', ios_t='iPhone पर', android_t='Android पर',
+  ios=['लिंक को Safari में खोलें','नीचे शेयर बटन (ऊपर तीर वाला चौकोर) दबाएं','नीचे जाकर “होम स्क्रीन में जोड़ें” (Add to Home Screen) दबाएं','ऊपर “जोड़ें” (Add) दबाएं'],
+  android=['लिंक को Chrome में खोलें','ऊपर तीन बिंदु ⋮ दबाएं','“ऐप इंस्टॉल करें” (Install app) या “होम स्क्रीन में जोड़ें” (Add to Home screen) दबाएं','“इंस्टॉल” (Install) दबाएं'],
+  done='फिर आपके फ़ोन की स्क्रीन पर बर्तन वाला आइकन दिखेगा, जिससे ऐप सीधे खुलेगा।'),
+ 'bn': dict(title='অ্যাপটি হোম স্ক্রিনে যোগ করুন', ios_t='iPhone-এ', android_t='Android-এ',
+  ios=['লিংকটি Safari-তে খুলুন','নিচে শেয়ার বোতাম (উপরে তীর চিহ্নসহ চৌকো) চাপুন','নিচে গিয়ে “হোম স্ক্রিনে যোগ করুন” (Add to Home Screen) চাপুন','উপরে “যোগ করুন” (Add) চাপুন'],
+  android=['লিংকটি Chrome-এ খুলুন','উপরে তিন বিন্দু ⋮ চাপুন','“অ্যাপ ইনস্টল করুন” (Install app) বা “হোম স্ক্রিনে যোগ করুন” (Add to Home screen) চাপুন','“ইনস্টল” (Install) চাপুন'],
+  done='এরপর আপনার ফোনের স্ক্রিনে হাঁড়ির আইকন দেখা যাবে, যা দিয়ে অ্যাপটি সরাসরি খুলবে।'),
+ 'fil': dict(title='Idagdag ang app sa home screen', ios_t='Sa iPhone', android_t='Sa Android',
+  ios=['Buksan ang link sa Safari','Pindutin ang Share button (kahon na may pataas na arrow) sa ibaba','Mag-scroll pababa at pindutin ang “Add to Home Screen”','Pindutin ang “Add” sa itaas'],
+  android=['Buksan ang link sa Chrome','Pindutin ang tatlong tuldok ⋮ sa itaas','Pindutin ang “Install app” o “Add to Home screen”','Pindutin ang “Install”'],
+  done='Lalabas ang icon ng kaldero sa screen ng iyong telepono at bubuksan nito ang app.'),
+}
+_filled_base = filled
+def filled():
+    out = _filled_base()
+    for l, v in INSTALL.items(): out[l]['install'] = v
+    return out

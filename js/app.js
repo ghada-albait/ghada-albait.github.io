@@ -393,6 +393,12 @@ function modalHelp() {
   const roles = S.view !== 'app' ? ['family', 'cook', 'driver'] : S.role === 'admin' ? ['admin', 'family', 'cook', 'driver'] : [S.role];
   let h = `<div class="center" style="margin-bottom:6px"><div class="logo" style="margin:0 auto">${ICON}</div></div><h3 class="center">${esc(T.about)}</h3><p style="margin:0 0 6px">${esc(g.intro)}</p>`;
   h += sec(T.login, g.login);
+  const standalone = window.matchMedia && window.matchMedia('(display-mode: standalone)').matches || navigator.standalone;
+  if (!standalone && g.install) {
+    const I = g.install, ua = navigator.userAgent, ios = /iphone|ipad|ipod/i.test(ua), and = /android/i.test(ua);
+    const parts = ios ? [[I.ios_t, I.ios]] : and ? [[I.android_t, I.android]] : [[I.ios_t, I.ios], [I.android_t, I.android]];
+    h += `<div class="card flat" style="margin:10px 0;background:var(--tint)"><div class="nm" style="font-family:var(--head)">📲 ${esc(I.title)}</div>${parts.map(([tt, arr]) => `<div class="lbl" style="margin-top:8px;color:var(--acc)">${esc(tt)}</div>${ol(arr)}`).join('')}<p class="small" style="margin:8px 0 0">${esc(I.done)}</p></div>`;
+  }
   roles.forEach(r => { const arr = r === 'admin' ? HELP.ar.admin : g[r]; if (arr) h += sec(T[r], arr); });
   h += `<div class="note"><b>${esc(T.tip)}</b>${esc(g.tip)}</div>`;
   return h;
