@@ -69,6 +69,22 @@ service cloud.firestore {
         allow read, write: if isMember(h) && uid == request.auth.uid;
       }
 
+      // Lunch ratings: family and manager rate; everyone in the house (except the driver) sees the stars, no names
+      match /ratings/{id} {
+        allow read: if hasRole(h, ['admin', 'family', 'cook']);
+        allow create, update: if hasRole(h, ['admin', 'family']) && request.resource.data.uid == request.auth.uid
+          && id == request.resource.data.date + '_' + request.auth.uid
+          && request.resource.data.stars is int && request.resource.data.stars >= 1 && request.resource.data.stars <= 5;
+        allow delete: if isAdmin(h) || (isMember(h) && resource.data.uid == request.auth.uid);
+      }
+      // Rating comments: only the manager (and the writer) can read them
+      match /ratingNotes/{id} {
+        allow read: if isAdmin(h) || (isMember(h) && resource.data.uid == request.auth.uid);
+        allow create: if hasRole(h, ['admin', 'family']) && request.resource.data.uid == request.auth.uid && request.resource.data.text.size() < 1000;
+        allow update: if isAdmin(h) || (hasRole(h, ['admin', 'family']) && resource.data.uid == request.auth.uid && request.resource.data.uid == request.auth.uid && request.resource.data.text.size() < 1000);
+        allow delete: if isAdmin(h);
+      }
+
       match /messages/{id} {
         allow read: if isAdmin(h) || (isMember(h) && (resource.data.fromUid == request.auth.uid || resource.data.get('to', '') == role(h)));
         allow create: if isMember(h) && request.resource.data.fromUid == request.auth.uid

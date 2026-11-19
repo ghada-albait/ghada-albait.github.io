@@ -3,10 +3,10 @@ import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.2/fireba
 import { getAuth, signInAnonymously, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
 import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager, doc, getDoc, setDoc, updateDoc, deleteDoc, collection, addDoc, onSnapshot, query, where, orderBy, limit, writeBatch } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 import { getMessaging, getToken, onMessage, isSupported as fcmSupported } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-messaging.js';
-import { firebaseConfig, vapidKey } from './firebase-config.js?v=19';
-import { I18N, QUICK_NOTES } from './i18n.js?v=19';
-import { DISHES, ITEMS, SEED_ITEMS_V, NEW_ITEMS_V2 } from './seed.js?v=19';
-import { HELP } from './help.js?v=19';
+import { firebaseConfig, vapidKey } from './firebase-config.js?v=20';
+import { I18N, QUICK_NOTES } from './i18n.js?v=20';
+import { DISHES, ITEMS, SEED_ITEMS_V, NEW_ITEMS_V2 } from './seed.js?v=20';
+import { HELP } from './help.js?v=20';
 
 const fbApp = initializeApp(firebaseConfig);
 const auth = getAuth(fbApp);
@@ -208,6 +208,48 @@ function weekList(start, n, admin) {
 }
 
 
+/* --- lunch ratings --- */
+function ratingsReport() {
+  const lim = addDays(today(), -30), rs = (S.ratings || []).filter(r => r.date >= lim);
+  let h = `<div class="sec"><h2>⭐ تقييمات الغداء</h2><span class="meta">آخر 30 يوم</span></div>`;
+  if (!rs.length) return h + `<div class="card empty">لا توجد تقييمات بعد. تظهر للعائلة وللإدارة بطاقة تقييم تحت غداء اليوم.</div>`;
+  const avg = rs.reduce((a, r) => a + r.stars, 0) / rs.length, days = [...new Set(rs.map(r => r.date))].sort().reverse();
+  h += `<div class="card flat"><div style="display:flex;align-items:baseline;gap:10px"><span class="stars big">★ ${avg.toFixed(1)}</span><span class="meta">${rs.length} تقييم · ${days.length} يوم</span></div>${days.slice(0, 7).map(d => { const a = ratingAgg(d); return `<div class="row" style="padding:8px 0"><div class="wd"><b>${esc(wdName(d))}</b><span>${esc(fmt(d, { day: 'numeric', month: 'short' }))}</span></div><div class="grow meta">${esc(dayMain(S.menus[d]) || '')}</div><span class="stars">★ ${a.avg.toFixed(1)}</span></div>`; }).join('')}</div>`;
+  const sc = {}; rs.forEach(r => Object.entries(r.dishes || {}).forEach(([id, v]) => { const o = sc[id] = sc[id] || { up: 0, down: 0 }; v > 0 ? o.up++ : o.down++; }));
+  const list = Object.entries(sc).filter(([id]) => S.dishes[id]).map(([id, o]) => ({ d: S.dishes[id], up: o.up, down: o.down, net: o.up - o.down }));
+  const top = list.slice().sort((a, b) => b.net - a.net).filter(x => x.net > 0).slice(0, 5), low = list.slice().sort((a, b) => a.net - b.net).filter(x => x.net < 0).slice(0, 5);
+  const rowD = x => `<div class="row" style="padding:8px 0">${thumb(x.d)}<div class="grow nm" style="font-size:15px">${esc(x.d.name_ar)}</div><span class="vote">👍 ${x.up}</span><span class="vote">👎 ${x.down}</span></div>`;
+  if (top.length) h += `<div class="card flat"><b>الأكثر إعجاباً</b>${top.map(rowD).join('')}</div>`;
+  if (low.length) h += `<div class="card flat"><b>الأقل إعجاباً</b><div class="meta">يقلّ ظهورها تلقائياً في المنيو</div>${low.map(rowD).join('')}</div>`;
+  const notes = (S.rnotes || []).filter(n => (n.text || '').trim()).sort((a, b) => b.at - a.at).slice(0, 30);
+  if (notes.length) h += `<div class="card flat"><b>تعليقات العائلة</b>${notes.map(n => `<div class="row" style="align-items:flex-start;padding:10px 0"><div class="grow"><div class="nm" style="font-size:15px">${esc(n.name || '')} <span class="stars" style="font-size:13px">${STAR(n.stars || 0)}</span></div><div class="meta">${esc(wdName(n.date))} ${esc(fmt(n.date, { day: 'numeric', month: 'short' }))}</div><div style="margin-top:4px" dir="auto">${esc(n.text)}</div></div>${n.sentToCook ? '<span class="badge ok">أُرسل ✓</span>' : `<button class="sm soft" data-act="noteToCook" data-id="${n.id}">أرسل للطباخ</button>`}</div>`).join('')}</div>`;
+  return h;
+}
+const STAR = n => '★'.repeat(n) + '☆'.repeat(5 - n);
+function ratingAgg(date) {
+  const rs = (S.ratings || []).filter(r => r.date === date), out = { n: rs.length, avg: 0, dishes: {} };
+  if (!rs.length) return out; out.avg = rs.reduce((a, r) => a + (r.stars || 0), 0) / rs.length;
+  rs.forEach(r => Object.entries(r.dishes || {}).forEach(([id, v]) => { const o = out.dishes[id] = out.dishes[id] || { up: 0, down: 0 }; if (v > 0) o.up++; else if (v < 0) o.down++; }));
+  return out;
+}
+const myRating = date => (S.ratings || []).find(r => r.date === date && r.uid === S.uid);
+function dishScores() { const sc = {}; (S.ratings || []).forEach(r => Object.entries(r.dishes || {}).forEach(([id, v]) => { sc[id] = (sc[id] || 0) + (v > 0 ? 1 : v < 0 ? -1 : 0); })); return sc; }
+function aggHtml(date, label) {
+  const a = ratingAgg(date), m = S.menus[date]; if (!a.n || !m) return '';
+  const ds = menuItems(m).filter(([, d]) => a.dishes[d.id]);
+  return `<div class="card flat ratecard"><div style="display:flex;align-items:center;justify-content:space-between;gap:8px"><b>${esc(label)}</b><span class="stars big">★ ${a.avg.toFixed(1)}</span></div><div class="meta">${a.n} ${esc(t('ratingsN'))}</div>${ds.map(([, d]) => { const v = a.dishes[d.id]; return `<div class="row" style="padding:8px 0">${thumb(d)}<div class="grow nm" style="font-size:15px">${esc(split(nm(d))[0])}</div><span class="vote">👍 ${v.up}</span><span class="vote">👎 ${v.down}</span></div>`; }).join('')}</div>`;
+}
+function rateCard(date) {
+  const m = S.menus[date]; if (!m || m.off || !menuItems(m).length) return '';
+  const mine = myRating(date); S.rdraft = S.rdraft || {};
+  if (mine && !S.rdraft[date]) return `<div class="card flat ratecard"><div style="display:flex;align-items:center;justify-content:space-between;gap:8px"><b>${esc(t('rated'))}</b><span class="stars">${STAR(mine.stars || 0)}</span></div><button class="sm ghost" data-act="rateEdit" data-v="${date}" style="margin-top:8px">${esc(t('editRating'))}</button></div>`;
+  const dr = S.rdraft[date] = S.rdraft[date] || { stars: mine ? mine.stars : 0, dishes: Object.assign({}, mine ? mine.dishes : {}), comment: ((S.rnotes || []).find(n => n.date === date && n.uid === S.uid) || {}).text || '' };
+  const needName = S.role !== 'admin' && !ls('myName_' + S.hid);
+  return `<div class="card flat ratecard"><b>⭐ ${esc(t('rateLunch'))}</b><div class="starrow">${[1, 2, 3, 4, 5].map(n => `<button class="${dr.stars >= n ? 'on' : ''}" data-act="rateStar" data-v="${date}" data-id="${n}" aria-label="${n}">★</button>`).join('')}</div>
+  <div class="flabel" style="margin-top:6px">${esc(t('rateDishes'))}</div>${menuItems(m).map(([, d]) => { const v = dr.dishes[d.id] || 0; return `<div class="row" style="padding:8px 0">${thumb(d)}<div class="grow nm" style="font-size:15px">${esc(split(nm(d))[0])}</div><button class="vbtn ${v > 0 ? 'up' : ''}" data-act="rateDish" data-v="${date}" data-id="${d.id}|1">👍</button><button class="vbtn ${v < 0 ? 'down' : ''}" data-act="rateDish" data-v="${date}" data-id="${d.id}|-1">👎</button></div>`; }).join('')}
+  ${needName ? `<div class="field"><label>${esc(t('yourName'))}</label><input data-rname value="${esc(dr.name || '')}"></div>` : ''}<div class="field"><label>${esc(t('yourComment'))}</label><textarea data-rc="${date}" rows="2">${esc(dr.comment || '')}</textarea></div><button class="block" data-act="rateSave" data-v="${date}">${esc(t('rateSave'))}</button></div>`;
+}
+
 /* --- push notifications --- */
 function pushCard() { try { if (ls('pushCardOff') || !S.house) return ''; const st = pushState(); if (st === 'default' || (st === 'granted' && !ls('pushTok_' + S.hid)) || (st === 'ios')) return `<div class="card flat pushcard"><div class="grow"><b>🔔 ${esc(t('notifOn'))}</b><div class="meta">${esc(st === 'ios' ? t('notifIos') : t('notifHint'))}</div></div>${st !== 'ios' ? `<button class="sm" data-act="notifEnable">${esc(t('notifOn'))}</button>` : ''}<button class="icon" data-act="pushCardOff" aria-label="close">✕</button></div>`; } catch (e) { } return ''; }
 const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
@@ -340,13 +382,13 @@ const keyOf = o => esc([o.name_ar, o.name_en, o.name_hi, o.name_bn, o.name_te, o
 /* ---------------- views ---------------- */
 function familyView() {
   const td = today();
-  return `<h1 class="page">${esc(t('today'))}</h1>` + heroMenu(td) + `<div class="sec"><h2>${esc(t('tomorrow'))}</h2></div>` + weekList(addDays(td, 1), 1) + `<div class="sec"><h2>${esc(t('thisWeek'))}</h2>${viewToggle()}</div>` + daysView(addDays(td, 2), 12);
+  return `<h1 class="page">${esc(t('today'))}</h1>` + heroMenu(td) + rateCard(td) + `<div class="sec"><h2>${esc(t('tomorrow'))}</h2></div>` + weekList(addDays(td, 1), 1) + `<div class="sec"><h2>${esc(t('thisWeek'))}</h2>${viewToggle()}</div>` + daysView(addDays(td, 2), 12);
 }
 function cookView() {
   const td = today();
   if (S.tab === 'list') return `<div class="sec"><h2>${esc(t('shortages'))}</h2><button class="sm" data-act="addShort">+ ${esc(t('addMissing'))}</button></div>` + shortList('cook');
   if (S.tab === 'week') return `<div class="sec"><h2>${esc(t('tomorrow'))}</h2><span class="badge">${esc(t('prep'))}</span></div>` + heroMenu(addDays(td, 1)) + `<div class="sec"><h2>${esc(t('thisWeek'))}</h2>${viewToggle()}</div>` + daysView(addDays(td, 2), 12);
-  return `<h1 class="page">${esc(t('today'))}</h1>` + heroMenu(td, { cook: true }) + `<div class="card flat" style="display:flex;align-items:center;justify-content:space-between;gap:8px"><span class="nm">${esc(t('shortages'))} · ${S.shortages.length}</span><button class="sm soft" data-act="addShort">+ ${esc(t('addMissing'))}</button></div>`;
+  return `<h1 class="page">${esc(t('today'))}</h1>` + heroMenu(td, { cook: true }) + aggHtml(td, t('ratingToday')) + aggHtml(addDays(td, -1), t('ratingYesterday')) + `<div class="card flat" style="display:flex;align-items:center;justify-content:space-between;gap:8px"><span class="nm">${esc(t('shortages'))} · ${S.shortages.length}</span><button class="sm soft" data-act="addShort">+ ${esc(t('addMissing'))}</button></div>`;
 }
 function shortRow(s, mode) {
   const o = (s.itemId && S.items[s.itemId]) || s;
@@ -387,7 +429,7 @@ function adminMenu() {
   const st = settings(), td = today();
   const spend = S.purchases.filter(p => p.month === monthOf(td)).reduce((a, p) => a + (Number(p.price) || 0), 0), nm2 = newMsgs();
   const stats = `<div class="stats"><button class="scard ${S.shortages.length ? 'hot' : ''}" data-act="atab" data-v="short"><b>${S.shortages.length}</b><span>نواقص مطلوبة</span></button><button class="scard ${nm2 ? 'hot' : ''}" data-act="atab" data-v="inbox"><b>${nm2}</b><span>طلبات ورسائل جديدة</span></button><button class="scard" data-act="atab" data-v="report"><b dir="ltr">${money(spend)}</b><span>مصروف هذا الشهر (د.ك)</span></button><button class="scard ${S.queue.length ? 'hot' : ''}" data-act="goPhotos"><b>${S.queue.length}</b><span>صور بانتظار اعتمادك</span></button></div>`;
-  return stats + `<div class="sec"><h2>غداء اليوم <button class="ibtn" data-act="openWa" data-v="today" aria-label="واتساب" style="display:inline-grid;vertical-align:middle;width:34px;height:34px;min-height:34px;color:var(--acc)">${UI.share}</button></h2>${S.menus[td] && !S.menus[td].off ? (S.menus[td].seen ? '<span class="badge ok">✓ استلم الطباخ</span>' : '<span class="badge gray">لم يستلم الطباخ بعد</span>') : ''}</div>` + heroMenu(td).replace(/<div><span class="badge ok">.*?<\/span><\/div>$/, '') + `<div class="sec"><h2>الأيام القادمة</h2>${viewToggle()}</div><div style="display:flex;justify-content:space-between;align-items:center;gap:8px"><p class="small mute" style="margin:0 2px">اضغط أي يوم لتعديله أو إضافة ملاحظة.</p><button class="sm soft" data-act="regen">${confirmKey === 'regen' ? 'اضغط للتأكيد' : '🔀 إعادة توليد'}</button></div>` + daysView(S.dayView === 'cal' ? td : addDays(td, 1), st.horizon - 1, true);
+  return stats + `<div class="sec"><h2>غداء اليوم <button class="ibtn" data-act="openWa" data-v="today" aria-label="واتساب" style="display:inline-grid;vertical-align:middle;width:34px;height:34px;min-height:34px;color:var(--acc)">${UI.share}</button></h2>${S.menus[td] && !S.menus[td].off ? (S.menus[td].seen ? '<span class="badge ok">✓ استلم الطباخ</span>' : '<span class="badge gray">لم يستلم الطباخ بعد</span>') : ''}</div>` + heroMenu(td).replace(/<div><span class="badge ok">.*?<\/span><\/div>$/, '') + aggHtml(td, 'تقييم العائلة لغداء اليوم') + rateCard(td) + `<div class="sec"><h2>الأيام القادمة</h2>${viewToggle()}</div><div style="display:flex;justify-content:space-between;align-items:center;gap:8px"><p class="small mute" style="margin:0 2px">اضغط أي يوم لتعديله أو إضافة ملاحظة.</p><button class="sm soft" data-act="regen">${confirmKey === 'regen' ? 'اضغط للتأكيد' : '🔀 إعادة توليد'}</button></div>` + daysView(S.dayView === 'cal' ? td : addDays(td, 1), st.horizon - 1, true);
 }
 function adminLib() {
   let h = `<div class="seg" style="grid-template-columns:repeat(3,1fr)">${[['dishes', 'الأطباق'], ['items', 'السلع'], ['photos', 'صور بانتظارك' + (S.queue.length ? ` (${S.queue.length})` : '')]].map(([k, l]) => `<button class="${S.libTab === k ? 'on' : ''}" data-act="ltab" data-v="${k}">${l}</button>`).join('')}</div>`;
@@ -413,7 +455,7 @@ function adminSettings() {
   h += `<div class="sec"><h2>الأجهزة الداخلة</h2></div><div class="card flat" style="padding:2px 14px">${S.members.map(m => `<div class="row${m.id !== S.uid ? ' sw' : ''}" data-sw="kick" data-id="${m.id}"><div class="grow"><div class="nm">${ROLE_AR[m.role] || m.role}${m.id === S.uid ? ' (هذا الجهاز)' : ''}</div><div class="meta"><bdi>${esc(LANGS[m.lang] ? LANGS[m.lang].label : '')}</bdi> · ${m.joinedAt ? `<bdi>${esc(new Date(m.joinedAt).toLocaleString('ar-KW-u-nu-latn', { day: 'numeric', month: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' }))}</bdi>` : ''}</div></div>${m.id !== S.uid ? `${delBtn('k' + m.id, 'kick', m.id)}` : ''}</div>`).join('') || '<div class="empty">—</div>'}</div><p class="small mute" style="margin:4px 2px">لإخراج شخص نهائياً: احذف جهازه ثم غيّر رمز دوره.</p>`;
   h += `<div class="sec"><h2>تركيبة الغداء اليومي</h2></div><div class="card flat">` + CATS.map(c => `<div class="row"><div class="grow nm" style="font-size:15px">${esc(t('c_' + c))}${c === 'rice' ? '<div class="meta">يُضاف تلقائياً مع المرق والمشاوي</div>' : ''}</div><select data-s="count_${c}" style="width:120px">${[0, 1, 2, 3].map(n => `<option value="${n}" ${st.counts[c] == n ? 'selected' : ''}>${n === 0 ? (c === 'rice' ? 'تلقائي' : 'بدون') : n}</option>`).join('')}</select></div>`).join('') + `</div>`;
   const hrs = (k, v, off) => `<select data-s="${k}">${off ? `<option value="-1" ${v < 0 ? 'selected' : ''}>بدون</option>` : ''}${Array.from({ length: 24 }, (_, i) => i).map(i => `<option value="${i}" ${+v === i ? 'selected' : ''}>${i === 0 ? '12 ص' : i < 12 ? i + ' ص' : i === 12 ? '12 ظ' : (i - 12) + ' م'}</option>`).join('')}</select>`;
-  h += `<div class="sec"><h2>🔔 تنبيهات الطباخ</h2></div><div class="card flat"><div class="row"><div class="grow"><div class="nm" style="font-size:15px">منيو بكرة (قبلها بيوم)</div><div class="meta">يصل للطباخ بلغته</div></div><div style="width:120px">${hrs('notifyEve', st.notifyEve)}</div></div><div class="row"><div class="grow"><div class="nm" style="font-size:15px">تذكير صباحي بمنيو اليوم</div></div><div style="width:120px">${hrs('notifyMorning', st.notifyMorning, true)}</div></div><p class="small mute" style="margin:6px 0 0">وإذا عدّلت منيو اليوم أو بكرة بعد إرساله، يصل للطباخ تنبيه بالتعديل. احفظ بالزر أسفل الإعدادات.</p></div>`;
+  h += `<div class="sec"><h2>🔔 تنبيهات الطباخ</h2></div><div class="card flat"><div class="row"><div class="grow"><div class="nm" style="font-size:15px">منيو بكرة (قبلها بيوم)</div><div class="meta">يصل للطباخ بلغته</div></div><div style="width:120px">${hrs('notifyEve', st.notifyEve)}</div></div><div class="row"><div class="grow"><div class="nm" style="font-size:15px">تذكير صباحي بمنيو اليوم</div></div><div style="width:120px">${hrs('notifyMorning', st.notifyMorning, true)}</div></div><label class="chk" style="margin-top:8px"><input type="checkbox" data-s="useRatings" ${st.useRatings !== false ? 'checked' : ''}><span>⭐ استخدم التقييمات في المنيو التلقائي (الأطباق المحبوبة تتكرر أكثر، والضعيفة أقل)</span></label><p class="small mute" style="margin:6px 0 0">وإذا عدّلت منيو اليوم أو بكرة بعد إرساله، يصل للطباخ تنبيه بالتعديل. احفظ بالزر أسفل الإعدادات.</p></div>`;
   h += `<div class="card flat"><div class="field" style="margin-top:0"><label>عدم تكرار الطبق الرئيسي قبل (أيام)</label><input data-s="noRepeat" type="number" min="1" max="60" value="${esc(st.noRepeat)}"></div><div class="field"><label>تجهيز المنيو مسبقاً لعدد أيام</label><input data-s="horizon" type="number" min="3" max="30" value="${esc(st.horizon)}"></div><div class="field"><label>أيام بدون غداء في البيت</label>${WD_AR.map((w, i) => `<label class="chk"><input type="checkbox" data-s="off_${i}" ${(st.offDays || []).includes(i) ? 'checked' : ''}><span>${w}</span></label>`).join('')}</div><button class="block" data-act="saveSettings">حفظ الإعدادات</button></div>`;
   h += `<div class="card flat"><button class="ghost block" data-act="logout">${confirmKey === 'logout' ? 'اضغط مرة أخرى للخروج' : 'خروج من هذا الجهاز'}</button></div>`;
   return h;
@@ -480,6 +522,7 @@ function adminReport() {
   rows.sort((a, b) => b.spend - a.spend);
   h += `<div class="sec"><h2>حسب السلعة</h2></div>` + (rows.length > 4 ? searchBox('report', 'ابحث عن سلعة') : '');
   h += rows.length ? `<div class="card flat" style="padding:2px 14px">${rows.map(r => { const o = (r.p.itemId && S.items[r.p.itemId]) || r.p, u = unitL(r.unit); return `<div class="row" style="align-items:flex-start" data-sg="report" data-key="${keyOf(o)}"><div class="grow"><div style="display:flex;justify-content:space-between;gap:8px"><span class="nm">${esc(o.emoji || '')} ${esc(nm(o, 'ar'))}</span><b>${money(r.spend)}</b></div><div class="meta">${r.times} مرات · ${+r.qty.toFixed(2)} ${esc(u)}${r.every ? ` · كل ~${Math.round(r.every)} يوم` : ''}</div><div class="meta">سعر ${esc(u)}: هذا الشهر ${money(r.mAvg)} · المعدل ${money(r.allAvg)}</div>${r.flag ? `<div style="margin-top:4px"><span class="badge warn">آخر سعر ${money(r.lastU)} أعلى من المعدل بأكثر من 20%</span></div>` : ''}</div></div>`; }).join('')}</div>` : `<div class="card empty">لا توجد مشتريات في هذا الشهر</div>`;
+  h += ratingsReport();
   if (inM.length) h += `<div class="card flat"><details${dOpen('purch')}><summary>كل عمليات الشراء (${inM.length})</summary>${inM.slice().sort((a, b) => (b.ts || 0) - (a.ts || 0)).map(p => { const o = (p.itemId && S.items[p.itemId]) || p; return `<div class="row sw" data-sw="delPurchase" data-id="${p.id}"><div class="grow"><div class="nm" style="font-size:15px">${esc(nm(o, 'ar'))}</div><div class="meta"><bdi>${esc(p.date)}${p.ts ? ' ' + esc(new Date(p.ts).toLocaleTimeString('ar-KW-u-nu-latn', { hour: 'numeric', minute: '2-digit' })) : ''}</bdi> · ${esc(p.qty)} ${esc(unitL(p.unit))} · ${esc(storeL(p.store))}</div></div><b>${money(p.price)}</b>${delBtn('p' + p.id, 'delPurchase', p.id)}</div>`; }).join('')}</details></div>`;
   return h;
 }
@@ -578,7 +621,7 @@ function pickDish(cat, date, used, exclude, gapMin) {
   const pool = Object.values(S.dishes).filter(d => d.cat === cat && d.active !== false && !exclude.includes(d.id)); if (!pool.length) return null;
   const sc = pool.map(d => ({ d, gap: used[d.id] ? Math.abs(diffDays(used[d.id], date)) : 999 }));
   let ok = sc.filter(s => s.gap >= gapMin); if (!ok.length) { sc.sort((a, b) => b.gap - a.gap); ok = sc.slice(0, Math.max(1, Math.ceil(sc.length / 3))); }
-  const w = ok.map(s => Math.min(s.gap, 60) + 1); let r = Math.random() * w.reduce((a, b) => a + b, 0);
+  const rsc = settings().useRatings === false ? {} : (pickDish._sc || {}); const w = ok.map(s => (Math.min(s.gap, 60) + 1) * (rsc[s.d.id] >= 2 ? 1.6 : rsc[s.d.id] <= -2 ? 0.35 : 1)); let r = Math.random() * w.reduce((a, b) => a + b, 0);
   for (let i = 0; i < ok.length; i++) { r -= w[i]; if (r <= 0) return ok[i].d.id; } return ok[ok.length - 1].d.id;
 }
 function genDay(date, used, st) {
@@ -595,6 +638,7 @@ function genDay(date, used, st) {
   return { date, off: false, items, auto: true, notes: [], note: '', seen: null };
 }
 async function maybeGenerate(force) {
+  pickDish._sc = dishScores();
   if (genRunning || (!force && genDone)) return;
   if (!['admin', 'cook'].includes(S.role) || !S.loaded.dishes || !S.loaded.menu || !S.house || S.offline) return;
   if (!Object.keys(S.dishes).length) return;
@@ -790,6 +834,22 @@ const ACT = {
   async saveReply() { const r = (M.reply || '').trim(), au = (M.rec && M.rec.data) || null; if (!r && !au) return toast('اكتب الرد أو سجّل صوتاً'); M.busy = true; renderModal(); try { await updateDoc(H('messages', M.id), { reply: r, replyAt: Date.now(), replyAudio: au, replyDur: au ? M.rec.dur : null }); toast('تم إرسال الرد'); closeModal(); } catch (e) { M.busy = false; renderModal(); toast(errMsg(e)); } },
   msgView(v, id) { openModal({ type: 'msgView', id }); },
   async msgDoneClose(v, id) { closeModal(); await updateDoc(H('messages', id), { status: 'done', doneAt: Date.now() }); },
+  rateEdit(v) { S.rdraft = S.rdraft || {}; delete S.rdraft[v]; const mine = myRating(v); S.rdraft[v] = { stars: mine ? mine.stars : 0, dishes: Object.assign({}, mine ? mine.dishes : {}), comment: ((S.rnotes || []).find(n => n.date === v && n.uid === S.uid) || {}).text || '' }; render(); },
+  rateStar(v, id) { S.rdraft[v].stars = +id; render(); },
+  rateDish(v, id) { const [d, x] = id.split('|'), dr = S.rdraft[v]; dr.dishes[d] = dr.dishes[d] === +x ? 0 : +x; render(); },
+  async rateSave(v, id, el) {
+    const dr = S.rdraft[v]; if (!dr || !dr.stars) return toast(t('pickStars'));
+    if (S.role !== 'admin' && !ls('myName_' + S.hid)) { const n = (dr.name || '').trim(); if (!n) return toast(t('yourName')); ls('myName_' + S.hid, n.slice(0, 40)); }
+    const name = S.role === 'admin' ? 'الإدارة' : ls('myName_' + S.hid), rid = v + '_' + S.uid, dishes = {}; Object.entries(dr.dishes).forEach(([k, x]) => { if (x) dishes[k] = x; });
+    el.disabled = true;
+    try {
+      await setDoc(H('ratings', rid), { date: v, uid: S.uid, role: S.role, stars: dr.stars, dishes, at: Date.now() });
+      const had = (S.rnotes || []).find(n => n.date === v && n.uid === S.uid), c = (dr.comment || '').trim();
+      if (c || had) await setDoc(H('ratingNotes', rid), { date: v, uid: S.uid, name, stars: dr.stars, text: c.slice(0, 900), lang: L(), at: Date.now() });
+      delete S.rdraft[v]; toast(t('rated')); render();
+    } catch (e) { el.disabled = false; toast(errMsg(e)); }
+  },
+  async noteToCook(v, id) { const n = (S.rnotes || []).find(x => x.id === id); if (!n) return; await addDoc(HC('messages'), { type: 'admin', to: 'cook', text: '⭐ ' + n.text, from: 'admin', fromUid: S.uid, lang: n.lang || 'ar', at: Date.now(), status: 'new' }); await updateDoc(H('ratingNotes', id), { sentToCook: Date.now() }); toast('أُرسل للطباخ ✓'); },
   recStart() { recStart(); },
   recStop() { recStop(); },
   recDel() { M.rec = {}; renderModal(); },
@@ -825,7 +885,7 @@ const ACT = {
     const q = k => $app.querySelector(`[data-s="${k}"]`);
     const counts = {}; CATS.forEach(c => { counts[c] = +q('count_' + c).value; });
     const offDays = []; for (let i = 0; i < 7; i++) if (q('off_' + i).checked) offDays.push(i);
-    const s = { notifyEve: +q('notifyEve').value, notifyMorning: +q('notifyMorning').value, counts, noRepeat: Math.max(1, Math.min(60, +q('noRepeat').value || 10)), horizon: Math.max(3, Math.min(30, +q('horizon').value || 14)), offDays };
+    const s = { useRatings: q('useRatings').checked, notifyEve: +q('notifyEve').value, notifyMorning: +q('notifyMorning').value, counts, noRepeat: Math.max(1, Math.min(60, +q('noRepeat').value || 10)), horizon: Math.max(3, Math.min(30, +q('horizon').value || 14)), offDays };
     if (document.activeElement) document.activeElement.blur();
     await updateDoc(H(), { settings: s }); toast('تم الحفظ. استخدم "إعادة توليد" لتطبيقها على الأيام التلقائية'); genDone = false; maybeGenerate();
   }
@@ -847,7 +907,7 @@ window.addEventListener('online', () => { S.offline = false; schedule(); });
 window.addEventListener('offline', () => { S.offline = true; schedule(); });
 
 /* ---------------- data ---------------- */
-function stop() { roleSubsOn = false; for (const k in migDone) delete migDone[k]; unsubs.forEach(u => { try { u(); } catch (e) { } }); unsubs = []; Object.assign(S, { dishes: {}, items: {}, menus: {}, shortages: [], purchases: [], photos: {}, members: [], queue: [], msgs: [], myMsgs: [], toMe: [], loaded: {}, house: null }); genDone = false; }
+function stop() { roleSubsOn = false; for (const k in migDone) delete migDone[k]; unsubs.forEach(u => { try { u(); } catch (e) { } }); unsubs = []; Object.assign(S, { dishes: {}, items: {}, menus: {}, shortages: [], purchases: [], photos: {}, members: [], queue: [], msgs: [], myMsgs: [], toMe: [], ratings: [], rnotes: [], rdraft: {}, loaded: {}, house: null }); genDone = false; }
 function sub(ref, key, fn, onErr) { unsubs.push(onSnapshot(ref, snap => { fn(snap); S.loaded[key] = true; if (key === 'dishes' || key === 'menu' || key === 'house') maybeGenerate(); schedule(); }, err => { console.warn(key, err); if (onErr) onErr(err); S.loaded[key] = true; schedule(); })); }
 function start(hid) {
   stop(); S.hid = hid; S.view = 'app'; render();
@@ -869,6 +929,9 @@ function attachRoleSubs() {
   sub(HC('dishPhotos'), 'photos', s => { const o = {}; s.forEach(d => { o[d.id] = d.data().data; }); S.photos = o; });
   if (r !== 'family') sub(HC('shortages'), 'shortages', s => { S.shortages = s.docs.map(d => Object.assign({ id: d.id }, d.data())).sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0)); });
   if (r === 'admin' || r === 'driver') sub(query(HC('purchases'), orderBy('ts', 'desc'), limit(1500)), 'purchases', s => { S.purchases = s.docs.map(d => Object.assign({ id: d.id }, d.data())); });
+  if (r !== 'driver') sub(query(HC('ratings'), where('date', '>=', addDays(today(), -60))), 'ratings', s => { S.ratings = s.docs.map(d => Object.assign({ id: d.id }, d.data())); });
+  if (r === 'admin') sub(query(HC('ratingNotes'), where('date', '>=', addDays(today(), -60))), 'rnotes', s => { S.rnotes = s.docs.map(d => Object.assign({ id: d.id }, d.data())); });
+  if (r === 'family') sub(query(HC('ratingNotes'), where('uid', '==', S.uid)), 'rnotes', s => { S.rnotes = s.docs.map(d => Object.assign({ id: d.id }, d.data())); });
   if (r !== 'admin') sub(query(HC('messages'), where('to', '==', r)), 'toMe', s => { S.toMe = s.docs.map(d => Object.assign({ id: d.id }, d.data())); if (M && M.type === 'msgs') renderModal(); });
   if (r !== 'admin') sub(query(HC('messages'), where('fromUid', '==', S.uid)), 'myMsgs', s => { S.myMsgs = s.docs.map(d => Object.assign({ id: d.id }, d.data())); if (M && M.type === 'msgs') renderModal(); });
   if (r === 'admin') {
@@ -894,7 +957,7 @@ onAuthStateChanged(auth, async u => {
 });
 if ('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js').then(r => { document.addEventListener('visibilitychange', () => { if (!document.hidden) r.update().catch(() => { }); }); }).catch(() => { });
 /* --- update check: compare baked version with version.json --- */
-const APP_V = '19';
+const APP_V = '20';
 let updShown = false;
 function checkUpdate() {
   if (updShown) return;
@@ -984,6 +1047,9 @@ async function bioUnlock() {
 }
 showLock();
 document.addEventListener('visibilitychange', () => { if (document.hidden) hiddenAt = Date.now(); else if (hiddenAt && Date.now() - hiddenAt > 60000) showLock(); });
+
+/* --- rating inputs keep their draft --- */
+document.addEventListener('input', e => { const c = e.target.dataset && e.target.dataset.rc; if (c && S.rdraft && S.rdraft[c]) S.rdraft[c].comment = e.target.value; if (e.target.hasAttribute && e.target.hasAttribute('data-rname')) Object.values(S.rdraft || {}).forEach(d => { d.name = e.target.value; }); });
 
 /* --- WhatsApp modal: live preview --- */
 document.addEventListener('input', e => { if (M && M.type === 'wa' && e.target.closest('#sheet')) { syncModal(); const p = document.getElementById('waPrev'); if (p) p.textContent = waText(); } });
