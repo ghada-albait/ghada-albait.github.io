@@ -2,10 +2,10 @@
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
 import { getAuth, signInAnonymously, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
 import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager, doc, getDoc, setDoc, updateDoc, deleteDoc, collection, addDoc, onSnapshot, query, where, orderBy, limit, writeBatch } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
-import { firebaseConfig } from './firebase-config.js';
-import { I18N, QUICK_NOTES } from './i18n.js';
-import { DISHES, ITEMS } from './seed.js';
-import { HELP } from './help.js';
+import { firebaseConfig } from './firebase-config.js?v=9';
+import { I18N, QUICK_NOTES } from './i18n.js?v=9';
+import { DISHES, ITEMS } from './seed.js?v=9';
+import { HELP } from './help.js?v=9';
 
 const fbApp = initializeApp(firebaseConfig);
 const auth = getAuth(fbApp);
@@ -733,4 +733,21 @@ onAuthStateChanged(auth, async u => {
   const hid = ls('hid');
   if (hid) start(hid); else { S.view = 'login'; render(); }
 });
-if ('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js').catch(() => { });
+if ('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js').then(r => { document.addEventListener('visibilitychange', () => { if (!document.hidden) r.update().catch(() => { }); }); }).catch(() => { });
+/* --- update check: compare baked version with version.json --- */
+const APP_V = '9';
+let updShown = false;
+function checkUpdate() {
+  if (updShown) return;
+  fetch('version.json?t=' + Date.now(), { cache: 'no-store' }).then(r => r.json()).then(j => {
+    if (!j || String(j.v) === APP_V || updShown) return;
+    updShown = true; const T = I18N[L()] || I18N.ar, b = document.createElement('div');
+    b.className = 'updbar'; b.setAttribute('dir', LANGS[L()].dir);
+    b.innerHTML = `<span>✨ ${esc(T.updAvail)}</span><button>${esc(T.updNow)}</button>`;
+    b.querySelector('button').onclick = () => { b.querySelector('button').innerHTML = '<span class="spin"></span>'; (navigator.serviceWorker && navigator.serviceWorker.getRegistration ? navigator.serviceWorker.getRegistration().then(r => r && r.update()).catch(() => { }) : Promise.resolve()).then(() => location.reload()); };
+    document.body.appendChild(b);
+  }).catch(() => { });
+}
+setTimeout(checkUpdate, 1500);
+setInterval(checkUpdate, 10 * 60 * 1000);
+document.addEventListener('visibilitychange', () => { if (!document.hidden) checkUpdate(); });
