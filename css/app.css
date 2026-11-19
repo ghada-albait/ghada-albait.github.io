@@ -168,3 +168,29 @@ details summary{cursor:pointer;font-weight:600;padding:6px 0}
 .updbar{position:fixed;left:12px;right:12px;top:calc(env(safe-area-inset-top,0px) + 10px);z-index:60;display:flex;align-items:center;justify-content:space-between;gap:10px;background:var(--ink);color:#fff;padding:10px 12px 10px 16px;border-radius:16px;box-shadow:0 8px 24px rgba(0,0,0,.25);font-size:14px;animation:updin .3s ease}
 .updbar button{background:var(--acc);color:#fff;border:0;border-radius:12px;padding:9px 14px;font:inherit;font-weight:700;white-space:nowrap;min-width:auto;width:auto}
 @keyframes updin{from{opacity:0;transform:translateY(-12px)}}
+
+/* ---- dark theme ---- */
+html[data-theme="dark"]{
+  --bg:#151210;--card:#211C19;--ink:#F2ECE6;--mute:#A99F97;--line:#352E29;--line2:#2B2521;
+  --acc:#D2643C;--acc-ink:#FFFFFF;--tint:#3A2419;--note:#3A2E1A;--note-ink:#F3D9A8;
+  --gray:#2C2622;--warn:#FF9A7A;--warnbg:#45231A;--ok:#7FC8A2;--okbg:#1E3329;
+  --shadow:0 1px 0 var(--line),0 8px 24px rgba(0,0,0,.35);color-scheme:dark}
+html[data-theme="dark"] .top{background:rgba(21,18,16,.92)}
+html[data-theme="dark"] .ph,html[data-theme="dark"] .photo,html[data-theme="dark"] .thumb{background-color:#2A2420}
+html[data-theme="dark"] .badge.gray{color:#CFC5BC}
+html[data-theme="dark"] .toast,html[data-theme="dark"] .totop,html[data-theme="dark"] .updbar{background:#3A322D;color:#fff}
+html[data-theme="dark"] .summary button{background:#fff;color:#9C3B1B}
+
+/* ---- delete: ✕ button, inline confirm, swipe ---- */
+.xdel{font-size:18px;min-width:40px}
+.delc{display:inline-flex;gap:4px;align-items:center;flex:none}
+.sw{position:relative;transition:transform .2s ease;touch-action:pan-y}
+.sw.swdel{background:var(--warnbg);border-radius:12px}
+
+/* ---- Face ID lock screen ---- */
+#lock{position:fixed;inset:0;z-index:100;background:var(--bg);display:grid;place-items:center;padding:24px}
+#lock .lockin{width:100%;max-width:340px;text-align:center;display:grid;gap:14px;justify-items:center}
+#lock .logo.big{width:84px;height:84px;border-radius:24px}
+#lock .logo.big svg{width:60px;height:60px}
+#lock h2{margin:4px 0 10px}
+html[data-theme="dark"] .credit{background:rgba(0,0,0,.6);color:#eee}

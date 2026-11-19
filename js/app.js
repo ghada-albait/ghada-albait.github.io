@@ -2,10 +2,10 @@
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
 import { getAuth, signInAnonymously, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
 import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager, doc, getDoc, setDoc, updateDoc, deleteDoc, collection, addDoc, onSnapshot, query, where, orderBy, limit, writeBatch } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
-import { firebaseConfig } from './firebase-config.js?v=9';
-import { I18N, QUICK_NOTES } from './i18n.js?v=9';
-import { DISHES, ITEMS } from './seed.js?v=9';
-import { HELP } from './help.js?v=9';
+import { firebaseConfig } from './firebase-config.js?v=10';
+import { I18N, QUICK_NOTES } from './i18n.js?v=10';
+import { DISHES, ITEMS } from './seed.js?v=10';
+import { HELP } from './help.js?v=10';
 
 const fbApp = initializeApp(firebaseConfig);
 const auth = getAuth(fbApp);
@@ -46,6 +46,9 @@ const $app = document.getElementById('app'), $modal = document.getElementById('m
 
 /* ---------------- helpers ---------------- */
 const nd = x => String(x || '').replace(/[\u0660-\u0669]/g, c => c.charCodeAt(0) - 0x660).replace(/[\u06F0-\u06F9]/g, c => c.charCodeAt(0) - 0x6F0).replace(/\s+/g, '');
+const OPEN_D = new Set();
+const dOpen = k => ` data-dk="${k}"${OPEN_D.has(k) ? ' open' : ''}`;
+function delBtn(key, act, id) { return confirmKey === key ? `<span class="delc"><button class="sm danger" data-act="${act}" data-id="${id}">🗑 ${esc(t('del'))}</button><button class="icon" data-act="cancelDel">${esc(t('cancel'))}</button></span>` : `<button class="icon xdel" data-act="${act}" data-id="${id}" aria-label="${esc(t('del'))}">✕</button>`; }
 const ls = (k, v) => { try { if (v === undefined) return localStorage.getItem(k); if (v === null) localStorage.removeItem(k); else localStorage.setItem(k, v); } catch (e) { return null; } };
 const L = () => (S.role === 'admin' ? 'ar' : (S.lang || 'ar'));
 const t = k => (I18N[L()] && I18N[L()][k]) || I18N.en[k] || k;
@@ -286,7 +289,7 @@ function adminLib() {
 function adminSettings() {
   const st = settings(), ps = (S.house && S.house.pinSet) || {};
   let h = `<div class="sec"><h2>رموز الدخول</h2></div><div class="card flat">` + ROLES.map(r => `<div class="row"><div class="grow"><div class="nm">${ROLE_AR[r]}</div><div class="meta">${ps[r] ? '✓ الرمز محدد' : 'لم يُحدد بعد'}</div></div><button class="sm ${ps[r] ? 'ghost' : ''}" data-act="setPin" data-v="${r}">${ps[r] ? 'تغيير' : 'تحديد'}</button>${ps[r] && r !== 'admin' ? `<button class="sm soft" data-act="invite" data-v="${r}">دعوة</button>` : ''}</div>`).join('') + `<p class="small mute" style="margin:8px 0 0">رمز البيت: <b dir="ltr">${esc(S.hid)}</b> · اجعل رمز كل دور مختلفاً.</p></div>`;
-  h += `<div class="sec"><h2>الأجهزة الداخلة</h2></div><div class="card flat" style="padding:2px 14px">${S.members.map(m => `<div class="row"><div class="grow"><div class="nm">${ROLE_AR[m.role] || m.role}${m.id === S.uid ? ' (هذا الجهاز)' : ''}</div><div class="meta">${esc(LANGS[m.lang] ? LANGS[m.lang].label : '')} · ${m.joinedAt ? esc(new Date(m.joinedAt).toLocaleDateString('ar-KW-u-nu-latn')) : ''}</div></div>${m.id !== S.uid ? `<button class="icon" data-act="kick" data-id="${m.id}">${confirmKey === 'k' + m.id ? 'تأكيد؟' : '✕'}</button>` : ''}</div>`).join('') || '<div class="empty">—</div>'}</div><p class="small mute" style="margin:4px 2px">لإخراج شخص نهائياً: احذف جهازه ثم غيّر رمز دوره.</p>`;
+  h += `<div class="sec"><h2>الأجهزة الداخلة</h2></div><div class="card flat" style="padding:2px 14px">${S.members.map(m => `<div class="row${m.id !== S.uid ? ' sw' : ''}" data-sw="kick" data-id="${m.id}"><div class="grow"><div class="nm">${ROLE_AR[m.role] || m.role}${m.id === S.uid ? ' (هذا الجهاز)' : ''}</div><div class="meta"><bdi>${esc(LANGS[m.lang] ? LANGS[m.lang].label : '')}</bdi> · ${m.joinedAt ? `<bdi>${esc(new Date(m.joinedAt).toLocaleString('ar-KW-u-nu-latn', { day: 'numeric', month: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' }))}</bdi>` : ''}</div></div>${m.id !== S.uid ? `${delBtn('k' + m.id, 'kick', m.id)}` : ''}</div>`).join('') || '<div class="empty">—</div>'}</div><p class="small mute" style="margin:4px 2px">لإخراج شخص نهائياً: احذف جهازه ثم غيّر رمز دوره.</p>`;
   h += `<div class="sec"><h2>تركيبة الغداء اليومي</h2></div><div class="card flat">` + CATS.map(c => `<div class="row"><div class="grow nm" style="font-size:15px">${esc(t('c_' + c))}${c === 'rice' ? '<div class="meta">يُضاف تلقائياً مع المرق والمشاوي</div>' : ''}</div><select data-s="count_${c}" style="width:120px">${[0, 1, 2, 3].map(n => `<option value="${n}" ${st.counts[c] == n ? 'selected' : ''}>${n === 0 ? (c === 'rice' ? 'تلقائي' : 'بدون') : n}</option>`).join('')}</select></div>`).join('') + `</div>`;
   h += `<div class="card flat"><div class="field" style="margin-top:0"><label>عدم تكرار الطبق الرئيسي قبل (أيام)</label><input data-s="noRepeat" type="number" min="1" max="60" value="${esc(st.noRepeat)}"></div><div class="field"><label>تجهيز المنيو مسبقاً لعدد أيام</label><input data-s="horizon" type="number" min="3" max="30" value="${esc(st.horizon)}"></div><div class="field"><label>أيام بدون غداء في البيت</label>${WD_AR.map((w, i) => `<label class="chk"><input type="checkbox" data-s="off_${i}" ${(st.offDays || []).includes(i) ? 'checked' : ''}><span>${w}</span></label>`).join('')}</div><button class="block" data-act="saveSettings">حفظ الإعدادات</button></div>`;
   h += `<div class="card flat"><button class="ghost block" data-act="logout">${confirmKey === 'logout' ? 'اضغط مرة أخرى للخروج' : 'خروج من هذا الجهاز'}</button></div>`;
@@ -301,9 +304,9 @@ function timeAgo(ts) { try { return new Date(ts).toLocaleString(LANGS[L()].loc, 
 function msgDish(m, lang) { const d = m.dishId && S.dishes[m.dishId]; if (!d) return ''; return `<div class="row" style="padding:8px 0;border:0">${thumb(d)}<div class="grow"><div class="nm">${esc(split(nm(d, lang))[0])}</div><div class="meta">${m.date ? esc(wdName(m.date)) + ' ' + esc(fmt(m.date, { day: 'numeric', month: 'short' })) : esc(t('anyDay'))}</div></div></div>`; }
 function adminInbox() {
   const open = S.msgs.filter(m => m.status !== 'done').sort((a, b) => b.at - a.at), done = S.msgs.filter(m => m.status === 'done').sort((a, b) => b.at - a.at);
-  const card = m => `<div class="card flat"><div style="display:flex;justify-content:space-between;gap:8px;align-items:center"><span class="badge ${m.type === 'suggest' ? '' : 'gray'}">${m.type === 'suggest' ? '🍽️ اقتراح طبق' : '💬 رسالة'} · ${m.fromName ? `<b>${esc(m.fromName)}</b> (${ROLE_AR[m.from] || ''})` : (ROLE_AR[m.from] || '')}</span><span class="meta">${esc(timeAgo(m.at))}</span></div>${msgDish(m, 'ar')}${m.text ? `<p style="margin:8px 0 0">${esc(m.text)}${m.lang && m.lang !== 'ar' ? ` <a class="small" href="${trLink(m.text, 'auto', 'ar')}" target="_blank" rel="noopener">ترجم ›</a>` : ''}</p>` : ''}${m.reply ? `<div class="note" style="margin:10px 0 0"><b>ردّك</b>${esc(m.reply)}</div>` : ''}${m.status !== 'done' ? `<div class="btns" style="margin-top:10px">${m.type === 'suggest' && S.dishes[m.dishId] ? `<button class="sm" data-act="msgToMenu" data-id="${m.id}">أضف للمنيو</button>` : ''}<button class="sm ghost" data-act="msgReply" data-id="${m.id}">رد</button><button class="sm soft" data-act="msgDone" data-id="${m.id}">تم</button></div>` : `<div style="margin-top:8px"><button class="icon" data-act="msgDel" data-id="${m.id}">${confirmKey === 'm' + m.id ? 'تأكيد الحذف؟' : 'حذف'}</button></div>`}</div>`;
+  const card = m => `<div class="card flat${m.status === 'done' ? ' sw' : ''}" data-sw="msgDel" data-id="${m.id}"><div style="display:flex;justify-content:space-between;gap:8px;align-items:center"><span class="badge ${m.type === 'suggest' ? '' : 'gray'}">${m.type === 'suggest' ? '🍽️ اقتراح طبق' : '💬 رسالة'} · ${m.fromName ? `<b>${esc(m.fromName)}</b> (${ROLE_AR[m.from] || ''})` : (ROLE_AR[m.from] || '')}</span><span class="meta">${esc(timeAgo(m.at))}</span></div>${msgDish(m, 'ar')}${m.text ? `<p style="margin:8px 0 0">${esc(m.text)}${m.lang && m.lang !== 'ar' ? ` <a class="small" href="${trLink(m.text, 'auto', 'ar')}" target="_blank" rel="noopener">ترجم ›</a>` : ''}</p>` : ''}${m.reply ? `<div class="note" style="margin:10px 0 0"><b>ردّك</b>${esc(m.reply)}</div>` : ''}${m.status !== 'done' ? `<div class="btns" style="margin-top:10px">${m.type === 'suggest' && S.dishes[m.dishId] ? `<button class="sm" data-act="msgToMenu" data-id="${m.id}">أضف للمنيو</button>` : ''}<button class="sm ghost" data-act="msgReply" data-id="${m.id}">رد</button><button class="sm soft" data-act="msgDone" data-id="${m.id}">تم</button></div>` : `<div style="margin-top:8px;display:flex;justify-content:flex-end">${delBtn('m' + m.id, 'msgDel', m.id)}</div>`}</div>`;
   let h = `<div class="sec"><h2>طلبات ورسائل جديدة</h2></div>` + (open.length ? open.map(card).join('') : `<div class="card empty">لا توجد طلبات جديدة</div>`);
-  if (done.length) h += `<div class="card flat"><details><summary>المنتهية (${done.length})</summary>${done.slice(0, 30).map(card).join('')}</details></div>`;
+  if (done.length) h += `<div class="card flat"><details${dOpen('done')}><summary>المنتهية (${done.length})</summary>${done.slice(0, 30).map(card).join('')}</details></div>`;
   return h;
 }
 function myMsgsHtml() {
@@ -353,7 +356,7 @@ function adminReport() {
   rows.sort((a, b) => b.spend - a.spend);
   h += `<div class="sec"><h2>حسب السلعة</h2></div>` + (rows.length > 4 ? searchBox('report', 'ابحث عن سلعة') : '');
   h += rows.length ? `<div class="card flat" style="padding:2px 14px">${rows.map(r => { const o = (r.p.itemId && S.items[r.p.itemId]) || r.p, u = unitL(r.unit); return `<div class="row" style="align-items:flex-start" data-sg="report" data-key="${keyOf(o)}"><div class="grow"><div style="display:flex;justify-content:space-between;gap:8px"><span class="nm">${esc(o.emoji || '')} ${esc(nm(o, 'ar'))}</span><b>${money(r.spend)}</b></div><div class="meta">${r.times} مرات · ${+r.qty.toFixed(2)} ${esc(u)}${r.every ? ` · كل ~${Math.round(r.every)} يوم` : ''}</div><div class="meta">سعر ${esc(u)}: هذا الشهر ${money(r.mAvg)} · المعدل ${money(r.allAvg)}</div>${r.flag ? `<div style="margin-top:4px"><span class="badge warn">آخر سعر ${money(r.lastU)} أعلى من المعدل بأكثر من 20%</span></div>` : ''}</div></div>`; }).join('')}</div>` : `<div class="card empty">لا توجد مشتريات في هذا الشهر</div>`;
-  if (inM.length) h += `<div class="card flat"><details><summary>كل عمليات الشراء (${inM.length})</summary>${inM.slice().sort((a, b) => (b.ts || 0) - (a.ts || 0)).map(p => { const o = (p.itemId && S.items[p.itemId]) || p; return `<div class="row"><div class="grow"><div class="nm" style="font-size:15px">${esc(nm(o, 'ar'))}</div><div class="meta">${esc(p.date)} · ${esc(p.qty)} ${esc(unitL(p.unit))} · ${esc(storeL(p.store))}</div></div><b>${money(p.price)}</b><button class="icon" data-act="delPurchase" data-id="${p.id}">${confirmKey === 'p' + p.id ? 'تأكيد؟' : '✕'}</button></div>`; }).join('')}</details></div>`;
+  if (inM.length) h += `<div class="card flat"><details${dOpen('purch')}><summary>كل عمليات الشراء (${inM.length})</summary>${inM.slice().sort((a, b) => (b.ts || 0) - (a.ts || 0)).map(p => { const o = (p.itemId && S.items[p.itemId]) || p; return `<div class="row sw" data-sw="delPurchase" data-id="${p.id}"><div class="grow"><div class="nm" style="font-size:15px">${esc(nm(o, 'ar'))}</div><div class="meta"><bdi>${esc(p.date)}${p.ts ? ' ' + esc(new Date(p.ts).toLocaleTimeString('ar-KW-u-nu-latn', { hour: 'numeric', minute: '2-digit' })) : ''}</bdi> · ${esc(p.qty)} ${esc(unitL(p.unit))} · ${esc(storeL(p.store))}</div></div><b>${money(p.price)}</b>${delBtn('p' + p.id, 'delPurchase', p.id)}</div>`; }).join('')}</details></div>`;
   return h;
 }
 
@@ -369,7 +372,7 @@ function renderModal() {
   if (!M) return; $sheet.setAttribute('dir', LANGS[L()].dir);
   let h = '<div class="handle"></div>';
   if (M.type === 'lang') h += `<h3>${esc(t('language'))}</h3>${langChips(S.lang)}`;
-  else if (M.type === 'me') h += `<h3>${esc(t('r_' + S.role))}</h3><p class="mute">${esc((S.house && S.house.name) || '')} · <span dir="ltr">${esc(S.hid)}</span></p><button class="ghost block" data-act="logout">${esc(confirmKey === 'logout' ? t('logoutAsk') : t('logout'))}</button>`;
+  else if (M.type === 'me') h += `<h3>${esc(t('r_' + S.role))}</h3><p class="mute">${esc((S.house && S.house.name) || '')} · <span dir="ltr">${esc(S.hid)}</span></p>${S.role !== 'admin' ? `<div class="field"><span class="flabel">${esc(t('language'))}</span>${langChips(S.lang || 'ar')}</div>` : ''}<div class="field"><span class="flabel">${esc(t('theme'))}</span><div class="seg" style="grid-template-columns:repeat(3,1fr);margin-top:6px">${['auto', 'light', 'dark'].map(v => `<button class="${(ls('theme') || 'auto') === v ? 'on' : ''}" data-act="setTheme" data-v="${v}">${esc(t('th_' + v))}</button>`).join('')}</div></div><div class="field"><span class="flabel">${esc(t('bioLock'))}</span><button class="${ls('bioId') ? 'soft' : 'ghost'} block" data-act="bioToggle">${ls('bioId') ? '🔒 ' + esc(t('bioIsOn')) : '🔓 ' + esc(t('bioTurnOn'))}</button><p class="small mute" style="margin:6px 2px 0">${esc(t('bioHint'))}</p></div><button class="ghost block" data-act="logout">${esc(confirmKey === 'logout' ? t('logoutAsk') : t('logout'))}</button>`;
   else if (M.type === 'short') h += modalShort();
   else if (M.type === 'buy') h += modalBuy();
   else if (M.type === 'day') h += modalDay();
@@ -494,6 +497,9 @@ const ACT = {
   setLang(v) { S.lang = v; ls('lang', v); if (S.view === 'app' && S.uid && S.hid) updateDoc(H('members', S.uid), { lang: v }).catch(() => {}); closeModal(); render(); },
   openLang() { openModal({ type: 'lang' }); },
   openHelp() { openModal({ type: 'help' }); },
+  cancelDel() { confirmKey = null; render(); },
+  setTheme(v) { ls('theme', v); applyTheme(); renderModal(); },
+  async bioToggle() { if (ls('bioId')) { ls('bioId', null); toast(t('bioOffd')); renderModal(); return; } await bioEnroll(); renderModal(); },
   openMe() { confirmKey = null; openModal({ type: 'me' }); },
   closeModal() { confirmKey = null; closeModal(); },
   goCreate() { S.view = 'create'; render(); },
@@ -625,7 +631,7 @@ const ACT = {
   async delItem() { if (confirmKey !== 'item') { confirmKey = 'item'; renderModal(); return; } confirmKey = null; await deleteDoc(H('items', M.id)); toast('تم الحذف'); closeModal(); },
   async approve(v, id) { const q = S.queue.find(x => x.id === id); if (!q) return; await setDoc(H('dishPhotos', q.dishId), { data: q.data, at: Date.now() }); await deleteDoc(H('photoSubmissions', id)); toast('تم اعتماد الصورة ✓'); },
   async reject(v, id) { await deleteDoc(H('photoSubmissions', id)); },
-  async delPurchase(v, id) { if (confirmKey !== 'p' + id) { confirmKey = 'p' + id; render(); return; } confirmKey = null; await deleteDoc(H('purchases', id)); },
+  async delPurchase(v, id) { if (confirmKey !== 'p' + id) { confirmKey = 'p' + id; render(); return; } confirmKey = null; await deleteDoc(H('purchases', id)); toast('تم الحذف'); },
   async kick(v, id) { if (confirmKey !== 'k' + id) { confirmKey = 'k' + id; render(); return; } confirmKey = null; await deleteDoc(H('members', id)); toast('تم'); },
 
   openMsgs() { ls('msgSeen_' + S.hid, String(Date.now())); openModal({ type: 'msgs' }); render(); },
@@ -645,7 +651,7 @@ const ACT = {
   msgReply(v, id) { const m = S.msgs.find(x => x.id === id); openModal({ type: 'reply', id, reply: (m && m.reply) || '', save: 'saveReply', saveLabel: 'إرسال الرد' }); },
   async saveReply() { const r = (M.reply || '').trim(); if (!r) return toast('اكتب الرد'); await updateDoc(H('messages', M.id), { reply: r, replyAt: Date.now() }); toast('تم إرسال الرد'); closeModal(); },
   async msgDone(v, id) { await updateDoc(H('messages', id), { status: 'done', doneAt: Date.now() }); },
-  async msgDel(v, id) { if (confirmKey !== 'm' + id) { confirmKey = 'm' + id; render(); return; } confirmKey = null; await deleteDoc(H('messages', id)); },
+  async msgDel(v, id) { if (confirmKey !== 'm' + id) { confirmKey = 'm' + id; render(); return; } confirmKey = null; await deleteDoc(H('messages', id)); toast('تم الحذف'); },
   msgToMenu(v, id) { const m = S.msgs.find(x => x.id === id); if (!m) return; S._msg = m; if (m.date) return ACT.msgToMenuDate(m.date); openModal({ type: 'pickDate' }); },
   msgToMenuDate(date) { const m = S._msg, d = m && S.dishes[m.dishId]; if (!d) return; ACT.editDay(date); const c = d.cat; M.items[c] = (M.items[c] || []).filter(x => x !== d.id); if (c === 'main') M.items.main = [d.id]; else M.items[c].push(d.id); M.fromMsg = m.id; renderModal(); },
   setPin(r) { openModal({ type: 'pin', role: r, pin: '', save: 'savePin', saveLabel: 'حفظ الرمز' }); },
@@ -735,7 +741,7 @@ onAuthStateChanged(auth, async u => {
 });
 if ('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js').then(r => { document.addEventListener('visibilitychange', () => { if (!document.hidden) r.update().catch(() => { }); }); }).catch(() => { });
 /* --- update check: compare baked version with version.json --- */
-const APP_V = '9';
+const APP_V = '10';
 let updShown = false;
 function checkUpdate() {
   if (updShown) return;
@@ -751,3 +757,63 @@ function checkUpdate() {
 setTimeout(checkUpdate, 1500);
 setInterval(checkUpdate, 10 * 60 * 1000);
 document.addEventListener('visibilitychange', () => { if (!document.hidden) checkUpdate(); });
+
+/* --- details open state survives re-render --- */
+document.addEventListener('toggle', e => { const d = e.target; if (d && d.dataset && d.dataset.dk) { if (d.open) OPEN_D.add(d.dataset.dk); else OPEN_D.delete(d.dataset.dk); } }, true);
+
+/* --- swipe to delete --- */
+(() => {
+  let sx = 0, sy = 0, row = null, dx = 0, horiz = null;
+  document.addEventListener('touchstart', e => { const r = e.target.closest('.sw'); if (!r || e.target.closest('button,a,input')) { row = null; return; } row = r; sx = e.touches[0].clientX; sy = e.touches[0].clientY; dx = 0; horiz = null; }, { passive: true });
+  document.addEventListener('touchmove', e => {
+    if (!row) return; const x = e.touches[0].clientX - sx, y = e.touches[0].clientY - sy;
+    if (horiz === null && (Math.abs(x) > 8 || Math.abs(y) > 8)) horiz = Math.abs(x) > Math.abs(y);
+    if (!horiz) return; dx = Math.max(-140, Math.min(140, x));
+    row.style.transition = 'none'; row.style.transform = `translateX(${dx}px)`; row.classList.toggle('swdel', Math.abs(dx) > 70);
+  }, { passive: true });
+  document.addEventListener('touchend', () => {
+    if (!row) return; const r = row; row = null; r.style.transition = ''; r.style.transform = ''; r.classList.remove('swdel');
+    if (horiz && Math.abs(dx) > 70) { const fn = ACT[r.dataset.sw]; if (fn) { const pre = { delPurchase: 'p', msgDel: 'm', kick: 'k' }[r.dataset.sw]; confirmKey = pre ? pre + r.dataset.id : null; if (navigator.vibrate) navigator.vibrate(15); fn(null, r.dataset.id); } }
+  });
+})();
+
+/* --- theme: auto / light / dark --- */
+function applyTheme() {
+  const v = ls('theme') || 'auto', dark = v === 'dark' || (v === 'auto' && window.matchMedia && matchMedia('(prefers-color-scheme: dark)').matches);
+  document.documentElement.dataset.theme = dark ? 'dark' : 'light';
+  const m = document.querySelector('meta[name="theme-color"]'); if (m) m.setAttribute('content', dark ? '#151210' : '#F7F5F2');
+}
+applyTheme();
+try { matchMedia('(prefers-color-scheme: dark)').addEventListener('change', applyTheme); } catch (e) { }
+
+/* --- Face ID / fingerprint lock (WebAuthn platform authenticator, local unlock only) --- */
+const b64 = buf => btoa(String.fromCharCode(...new Uint8Array(buf))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+const unb64 = s => Uint8Array.from(atob(s.replace(/-/g, '+').replace(/_/g, '/') + '==='.slice((s.length + 3) % 4)), c => c.charCodeAt(0));
+const rnd = n => crypto.getRandomValues(new Uint8Array(n));
+async function bioAvailable() { try { return !!(window.PublicKeyCredential && await PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable()); } catch (e) { return false; } }
+async function bioEnroll() {
+  if (!(await bioAvailable())) { toast(t('bioNA')); return false; }
+  try {
+    const c = await navigator.credentials.create({ publicKey: { challenge: rnd(32), rp: { name: 'Ghada Al-Bait', id: location.hostname }, user: { id: rnd(16), name: (S.hid || 'home') + '-' + (S.role || ''), displayName: (S.house && S.house.name) || 'Ghada' }, pubKeyCredParams: [{ type: 'public-key', alg: -7 }, { type: 'public-key', alg: -257 }], authenticatorSelection: { authenticatorAttachment: 'platform', userVerification: 'required', residentKey: 'discouraged' }, timeout: 60000, attestation: 'none' } });
+    ls('bioId', b64(c.rawId)); ls('bioAt', String(Date.now())); toast('✓ ' + t('bioIsOn')); return true;
+  } catch (e) { toast(t('bioFail')); return false; }
+}
+let locked = false, hiddenAt = 0;
+function showLock() {
+  if (locked || !ls('bioId') || !ls('hid')) return; locked = true;
+  const T = I18N[L()] || I18N.ar, d = document.createElement('div'); d.id = 'lock'; d.setAttribute('dir', LANGS[L()].dir);
+  d.innerHTML = `<div class="lockin"><div class="logo big">${ICON}</div><h2>${esc((S.house && S.house.name) || T.title)}</h2><button class="block" id="unlockBtn">🔒 ${esc(T.bioUnlock)}</button><button class="icon" id="lockOut">${esc(T.bioUsePin)}</button></div>`;
+  document.body.appendChild(d);
+  d.querySelector('#unlockBtn').onclick = bioUnlock;
+  d.querySelector('#lockOut').onclick = () => { if (!confirm(T.bioUsePinAsk)) return; ls('bioId', null); d.remove(); locked = false; ACT.logout && (confirmKey = 'logout', ACT.logout()); };
+  bioUnlock();
+}
+async function bioUnlock() {
+  const btn = document.getElementById('unlockBtn'); if (btn) btn.disabled = true;
+  try {
+    await navigator.credentials.get({ publicKey: { challenge: rnd(32), rpId: location.hostname, allowCredentials: [{ type: 'public-key', id: unb64(ls('bioId')) }], userVerification: 'required', timeout: 60000 } });
+    const d = document.getElementById('lock'); if (d) d.remove(); locked = false;
+  } catch (e) { if (btn) btn.disabled = false; }
+}
+showLock();
+document.addEventListener('visibilitychange', () => { if (document.hidden) hiddenAt = Date.now(); else if (hiddenAt && Date.now() - hiddenAt > 60000) showLock(); });
