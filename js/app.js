@@ -5,6 +5,7 @@ import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager
 import { firebaseConfig } from './firebase-config.js';
 import { I18N, QUICK_NOTES } from './i18n.js';
 import { DISHES, ITEMS } from './seed.js';
+import { HELP } from './help.js';
 
 const fbApp = initializeApp(firebaseConfig);
 const auth = getAuth(fbApp);
@@ -96,7 +97,7 @@ function loginView() {
     <div class="field"><label for="pin">${esc(t('yourPin'))}</label><input id="pin" class="pinbox" type="password" inputmode="numeric" maxlength="8" autocomplete="off"></div>
     <button class="block" data-act="login">${esc(t('enter'))}</button>
   </div>
-  <p class="center small mute" style="margin:0">${esc(t('loginHint'))}</p>
+  <p class="center small mute" style="margin:0">${esc(t('loginHint'))} · <a href="#" data-act="openHelp">${esc(HELP[S.lang || 'ar'].t.help)}</a></p>
   <p class="center small" style="margin:auto 0 0"><a href="#" data-act="goCreate">إنشاء بيت جديد (لصاحب البيت)</a></p>
   </div>`;
 }
@@ -123,7 +124,7 @@ function shell() {
   const nav = r === 'cook' ? `<nav class="nav"><div class="in">${[['today', 'tabToday'], ['list', 'tabList'], ['week', 'tabWeek']].map(([k, lab]) => `<button class="${S.tab === k ? 'on' : ''}" data-act="tab" data-v="${k}">${SV[k]}${esc(t(lab))}${k === 'list' && S.shortages.length ? ` (${S.shortages.length})` : ''}</button>`).join('')}</div></nav>` : '';
   return `<header class="top"><div class="topin">
     <div class="brand"><div class="logo">${ICON}</div><div style="min-width:0"><div class="ttl">${esc((S.house && S.house.name) || t('title'))}</div><div class="sub">${esc(wdName(today()))} · ${esc(fmt(today(), { day: 'numeric', month: 'long' }))}</div></div></div>
-    <div class="actions">${r !== 'admin' ? `<button class="pill" data-act="openMsgs" aria-label="${esc(t('messages'))}">💬${unreadReplies() ? ` <b style="color:var(--acc)">${unreadReplies()}</b>` : ''}</button><button class="pill" data-act="openLang">${esc(LANGS[l].label)}</button>` : ''}<button class="pill" data-act="openMe">${esc(t('r_' + r))}</button></div>
+    <div class="actions">${r !== 'admin' ? `<button class="pill" data-act="openMsgs" aria-label="${esc(t('messages'))}">💬${unreadReplies() ? ` <b style="color:var(--acc)">${unreadReplies()}</b>` : ''}</button><button class="pill" data-act="openLang">${esc(LANGS[l].label)}</button>` : ''}<button class="pill" data-act="openHelp" aria-label="${esc(HELP[l].t.help)}">?</button><button class="pill" data-act="openMe">${esc(t('r_' + r))}</button></div>
   </div>${S.offline ? `<div class="banner">${esc(t('offline'))}</div>` : ''}</header>
   <main class="wrap">${body}</main>${nav}`;
 }
@@ -332,6 +333,7 @@ function renderModal() {
   else if (M.type === 'day') h += modalDay();
   else if (M.type === 'dish') h += modalDish();
   else if (M.type === 'item') h += modalItem();
+  else if (M.type === 'help') h += modalHelp();
   else if (M.type === 'msgs') h += modalMsgs();
   else if (M.type === 'compose') h += modalCompose();
   else if (M.type === 'reply') h += `<h3>رد على الرسالة</h3><div class="field"><textarea data-m="reply" placeholder="يظهر للمرسل مع زر ترجمة">${esc(M.reply || '')}</textarea></div>`;
@@ -340,6 +342,19 @@ function renderModal() {
   else if (M.type === 'invite') h += `<h3>دعوة ${ROLE_AR[M.role]}</h3><div class="field"><label>اكتب رمز ${ROLE_AR[M.role]} ليُضاف للرسالة</label><input data-m="pin" class="pinbox" inputmode="numeric" maxlength="6" value="${esc(M.pin || '')}"></div><div class="field"><label>لغة الرسالة</label><div class="chips">${['hi', 'bn', 'fil', 'en', 'ar'].map(k => `<button class="chip ${M.lang === k ? 'on' : ''}" data-act="invLang" data-v="${k}">${LANGS[k].label}</button>`).join('')}</div></div>`;
   h += `<div class="btns"><button class="ghost" data-act="closeModal">${esc(t('cancel'))}</button>${M.save ? `<button data-act="${M.save}" ${M.busy ? 'disabled' : ''}>${M.busy ? '<span class="spin"></span>' : esc(M.saveLabel || t('save'))}</button>` : ''}</div>`;
   $sheet.innerHTML = h;
+}
+
+function modalHelp() {
+  M.save = null;
+  const lang = S.view === 'app' ? L() : (S.lang || 'ar'), g = HELP[lang], T = g.t;
+  const ol = arr => `<ol style="margin:6px 0 0;padding-inline-start:22px;line-height:1.7">${arr.map(x => `<li>${esc(x)}</li>`).join('')}</ol>`;
+  const sec = (title, arr) => `<div class="card flat" style="margin:10px 0"><div class="nm" style="font-family:var(--head)">${esc(title)}</div>${ol(arr)}</div>`;
+  const roles = S.view !== 'app' ? ['family', 'cook', 'driver'] : S.role === 'admin' ? ['admin', 'family', 'cook', 'driver'] : [S.role];
+  let h = `<div class="center" style="margin-bottom:6px"><div class="logo" style="margin:0 auto">${ICON}</div></div><h3 class="center">${esc(T.about)}</h3><p style="margin:0 0 6px">${esc(g.intro)}</p>`;
+  h += sec(T.login, g.login);
+  roles.forEach(r => { const arr = r === 'admin' ? HELP.ar.admin : g[r]; if (arr) h += sec(T[r], arr); });
+  h += `<div class="note"><b>${esc(T.tip)}</b>${esc(g.tip)}</div>`;
+  return h;
 }
 function itemTile(i) { const k = [i.name_ar, i.name_en, i.name_hi, i.name_bn, i.name_fil].join(' ').toLowerCase(); return `<button class="tile" data-act="pickItem" data-id="${i.id}" data-key="${esc(k)}"><span class="te">${esc(i.emoji || '🛒')}</span><span>${esc(nm(i))}</span>${L() !== 'ar' ? `<span class="ta">${esc(i.name_ar)}</span>` : ''}</button>`; }
 function modalShort() {
@@ -429,6 +444,7 @@ async function compress(file) {
 const ACT = {
   setLang(v) { S.lang = v; ls('lang', v); if (S.view === 'app' && S.uid && S.hid) updateDoc(H('members', S.uid), { lang: v }).catch(() => {}); closeModal(); render(); },
   openLang() { openModal({ type: 'lang' }); },
+  openHelp() { openModal({ type: 'help' }); },
   openMe() { confirmKey = null; openModal({ type: 'me' }); },
   closeModal() { confirmKey = null; closeModal(); },
   goCreate() { S.view = 'create'; render(); },
@@ -624,7 +640,7 @@ function start(hid) {
     if (!snap.exists()) { stop(); ls('hid', null); S.view = 'login'; S.role = null; return; }
     const m = snap.data(); const changed = S.role !== m.role; S.role = m.role;
     if (!S.lang) S.lang = m.lang || (m.role === 'cook' || m.role === 'driver' ? 'en' : 'ar');
-    if (changed) { S.tab = 'today'; attachRoleSubs(); }
+    if (changed) { S.tab = 'today'; attachRoleSubs(); if (!ls('helpSeen_' + m.role)) { ls('helpSeen_' + m.role, '1'); setTimeout(() => { if (!M) openModal({ type: 'help' }); }, 900); } }
   }, () => { stop(); ls('hid', null); S.view = 'login'; });
 }
 let roleSubsOn = false;
