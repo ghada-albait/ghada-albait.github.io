@@ -1,0 +1,58 @@
+# غداء البيت — ملف تعريف المشروع (لـ Claude)
+
+آخر تحديث: 19 نوفمبر 2026 · إصدار التطبيق: v21
+
+## ما هو
+تطبيق ويب (PWA) لإدارة غداء البيت: منيو يومي يتجهّز تلقائياً، الطباخ يرى المنيو بلغته، النواقص تصل للسائق ويسجّل أسعارها، تقارير شهرية للمصروف والأسعار، رسائل نصية وصوتية، تقييم الغداء، وتنبيهات.
+- الرابط: https://ghada-albait.github.io
+- المستودع: github.com/ghada-albait/ghada-albait.github.io (فرع main، النشر عبر GitHub Pages تلقائياً)
+- حساب GitHub الذي يرفع منه Claude: ommali-app (مشارك في المستودع)
+- Firebase: مشروع ghada-albait (خطة Spark المجانية) — Firestore + Anonymous Auth + Cloud Messaging
+- البيت الحالي: «بيت السرة» برمز البيت SURRA
+
+## الأدوار
+- **الإدارة (admin)**: صاحب الحساب ووالده. صلاحيات كاملة. واجهتها عربية فقط.
+- **العائلة (family)**: ترى المنيو، تقترح أطباقاً، ترسل رسائل (نص/صوت)، تقيّم الغداء.
+- **الطباخ (cook)**: يرى المنيو بلغته (التيلوغو حالياً)، يضيف النواقص، يرسل رسائل، يرى متوسط التقييم بدون أسماء.
+- **السائق (driver)**: يرى قائمة المشتريات، يضيف للقائمة، يسجّل الشراء بالسعر، يرسل رسائل.
+
+اللغات: العربية، الإنجليزية، الهندية، البنغالية، التيلوغو، الفلبينية.
+أسماء الأطباق الكويتية تُكتب بالنطق الكويتي ثم الشرح بين قوسين، مثل: मचबूस दियाय (मसाला चावल और चिकन).
+
+## الدخول (بدون إيميل)
+رمز البيت + رمز شخصي لكل دور. العميل يكتب members/{uid} فيه SHA-256 لـ `${hid}|${role}|${pin}`، والقواعد تقارنه بـ secret/pins (لا يقرؤه أحد). التطبيق يجرب الأدوار بالترتيب: admin, family, cook, driver.
+⚠️ لا تطلب من المستخدم أي رمز دخول أبداً.
+
+## بنية الملفات
+- `index.html`، `sw.js` (كاش network-first + معالج push)، `manifest.webmanifest`، `icons/`
+- `css/app.css` — ثيم «بابريكا» (#9C3B1B) + وضع داكن
+- `js/app.js` — التطبيق كله (Firebase SDK 10.12.2 من gstatic)
+- `js/i18n.js` — النصوص بست لغات + QUICK_NOTES (ملاحظات جاهزة مترجمة)
+- `js/seed.js` — 77 طبقاً و60 سلعة (DISHES, ITEMS) + SEED_ITEMS_V
+- `js/help.js` — دليل الاستخدام (مولَّد من guide/content.py)
+- `js/changes.js` — «ما الجديد» لكل دور وكل لغة (يظهر مرة بعد كل تحديث)
+- `js/firebase-config.js` — الإعداد العام + vapidKey
+- `firestore.rules` — القواعد (المستخدم يلصقها في Firebase ← Firestore ← Rules ← Publish)
+- `tools/notify.mjs` + `.github/workflows/notify.yml` — مرسل التنبيهات كل 5 دقائق عبر GitHub Actions (يحتاج سر FIREBASE_SA)
+- `bump.sh` — يرفع رقم الإصدار في كل مكان (يُظهر للمستخدمين شريط «حدّث الآن»)
+
+## بيانات Firestore (households/{CODE}/…)
+secret/pins، members، dishes (فيها recipe اختياري)، items، dishPhotos، photoSubmissions، menu/{YYYY-MM-DD} (items, notes, note, off, auto, seen, editedAt)، shortages (by, createdAt)، purchases (price, store, date, month, ts)، messages (type: msg|suggest|admin، to، fromName، audio، reply، replyAudio)، ratings/{date_uid} (stars, dishes)، ratingNotes/{date_uid} (تعليقات للإدارة فقط)، tokens/{uid} (FCM)، meta/notify (حالة المرسل).
+إعدادات البيت في households/{CODE}.settings: counts، noRepeat، horizon، offDays، notifyEve (19)، notifyMorning (8)، useRatings.
+
+## الميزات المنجزة
+منيو تلقائي بأوزان (عدم التكرار + التقييمات) · عيش تلقائي مع المرق · أيام بدون غداء · عرض قائمة/بطاقات/تقويم · بحث · رجوع للخلف · شريط سفلي للإدارة · وضع داكن/فاتح/تلقائي · قفل Face ID/بصمة (WebAuthn محلي) · صور حقيقية دقيقة فقط (31 من Wikimedia) + صور البيت · اقتراح أطباق · رسائل نصية وصوتية (حتى دقيقة، تُحذف بعد 30 يوماً) · فتح الرسالة كاملة · مشاركة واتساب بأي لغة (منيو/قائمة/طريقة طبق/تعليمات) · طريقة التحضير للطباخ · السائق يضيف للنواقص + لوازم منزلية · تقييم الغداء (نجوم + 👍/👎 لكل طبق؛ الطباخ يرى المتوسط فقط؛ التعليقات للإدارة مع زر «أرسل للطباخ») · تقارير شهرية · شريط «حدّث الآن» · «ما الجديد» · تعليمات داخلية + دليل PDF + رسائل واتساب للتثبيت.
+
+## المعلّق / للمتابعة
+- التأكد أن المستخدم لصق آخر نسخة من firestore.rules وضغط Publish.
+- التأكد من حفظ FIREBASE_SA في GitHub Secrets وتشغيل Push notifications بنجاح ✅، ثم تجربة التنبيهات على الجوالات.
+- تجربة التسجيل الصوتي وFace ID على أجهزة حقيقية.
+- مقترحات لم تُنفّذ: ترجمة واجهة الإدارة للإنجليزي، زر «تبديل البيت» لمن عنده أكثر من بيت، مشاركة التطبيق مع الأصدقاء (كل صديق ينشئ بيتاً جديداً).
+
+## طريقة العمل المتفق عليها
+1. استنسخ المستودع (add_repo ghada-albait/ghada-albait.github.io بصلاحية push).
+2. عدّل، ثم اختبر في jsdom بمحاكاة Firebase، وخذ لقطة شاشة بـ Chrome headless للتغييرات المرئية.
+3. أضف سطوراً في `js/changes.js` (إصدار جديد v أعلى) لكل دور وبكل اللغات عند أي ميزة يلاحظها المستخدم.
+4. شغّل `sh bump.sh` ثم commit و push.
+5. إذا تغيّرت firestore.rules ذكّر المستخدم بلصقها: https://raw.githubusercontent.com/ghada-albait/ghada-albait.github.io/main/firestore.rules
+6. الرد بالعربي، مختصر، مع خطوات واضحة. رسائل الواتساب للطباخ والسائق بلغاتهم.
