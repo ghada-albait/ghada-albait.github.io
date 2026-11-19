@@ -2,10 +2,10 @@
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
 import { getAuth, signInAnonymously, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
 import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager, doc, getDoc, setDoc, updateDoc, deleteDoc, collection, addDoc, onSnapshot, query, where, orderBy, limit, writeBatch } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
-import { firebaseConfig } from './firebase-config.js?v=12';
-import { I18N, QUICK_NOTES } from './i18n.js?v=12';
-import { DISHES, ITEMS } from './seed.js?v=12';
-import { HELP } from './help.js?v=12';
+import { firebaseConfig } from './firebase-config.js?v=13';
+import { I18N, QUICK_NOTES } from './i18n.js?v=13';
+import { DISHES, ITEMS } from './seed.js?v=13';
+import { HELP } from './help.js?v=13';
 
 const fbApp = initializeApp(firebaseConfig);
 const auth = getAuth(fbApp);
@@ -789,7 +789,7 @@ onAuthStateChanged(auth, async u => {
 });
 if ('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js').then(r => { document.addEventListener('visibilitychange', () => { if (!document.hidden) r.update().catch(() => { }); }); }).catch(() => { });
 /* --- update check: compare baked version with version.json --- */
-const APP_V = '12';
+const APP_V = '13';
 let updShown = false;
 function checkUpdate() {
   if (updShown) return;
@@ -878,3 +878,22 @@ document.addEventListener('visibilitychange', () => { if (document.hidden) hidde
 /* --- WhatsApp modal: live preview --- */
 document.addEventListener('input', e => { if (M && M.type === 'wa' && e.target.closest('#sheet')) { syncModal(); const p = document.getElementById('waPrev'); if (p) p.textContent = waText(); } });
 document.addEventListener('change', e => { if (M && M.type === 'wa' && e.target.matches('#sheet select[data-m="dishId"]')) { syncModal(); renderModal(); } });
+
+/* --- bottom sheet: drag down to close, tap outside to close --- */
+(() => {
+  let y0 = null, dy = 0, drag = false;
+  $sheet.addEventListener('touchstart', e => { if (e.target.closest('input,textarea,select')) { y0 = null; return; } y0 = e.touches[0].clientY; dy = 0; drag = !!e.target.closest('.handle') || $sheet.scrollTop <= 0; }, { passive: true });
+  $sheet.addEventListener('touchmove', e => {
+    if (y0 === null || !drag) return; dy = e.touches[0].clientY - y0;
+    if (dy <= 0) { $sheet.style.transform = ''; return; }
+    if ($sheet.scrollTop > 0 && !e.target.closest('.handle')) { drag = false; $sheet.style.transform = ''; return; }
+    if (e.cancelable) e.preventDefault();
+    $sheet.style.transition = 'none'; $sheet.style.transform = `translateY(${dy}px)`;
+  }, { passive: false });
+  $sheet.addEventListener('touchend', () => {
+    if (y0 === null) return; y0 = null; $sheet.style.transition = 'transform .2s ease';
+    if (drag && dy > 90) { $sheet.style.transform = 'translateY(100%)'; setTimeout(() => { $sheet.style.transform = ''; $sheet.style.transition = ''; ACT.closeModal(); }, 180); }
+    else $sheet.style.transform = '';
+  });
+  $modal.addEventListener('click', e => { if (e.target === $modal) ACT.closeModal(); });
+})();

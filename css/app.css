@@ -98,7 +98,7 @@ h1.page{font-family:var(--head);font-size:26px;margin:18px 2px 4px}
 .modal{position:fixed;inset:0;z-index:20;background:rgba(31,26,23,.45);display:flex;align-items:flex-end;justify-content:center}
 .modal.hidden{display:none}
 .sheet{background:var(--card);width:100%;max-width:640px;max-height:92vh;overflow:auto;border-radius:26px 26px 0 0;padding:10px 20px calc(24px + env(safe-area-inset-bottom))}
-.sheet .handle{width:40px;height:5px;border-radius:3px;background:var(--line);margin:0 auto 10px}
+.sheet .handle{width:48px;height:6px;border-radius:9px;background:var(--line);margin:-8px auto 2px;border:12px solid transparent;background-clip:padding-box;box-sizing:content-box;cursor:grab}
 .sheet h3{font-family:var(--head);font-size:20px;margin:4px 0 12px}
 @media(min-width:700px){.modal{align-items:center}.sheet{border-radius:26px}}
 .btns{display:flex;gap:8px;margin-top:18px}
