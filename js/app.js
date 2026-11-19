@@ -2,10 +2,10 @@
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
 import { getAuth, signInAnonymously, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
 import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager, doc, getDoc, setDoc, updateDoc, deleteDoc, collection, addDoc, onSnapshot, query, where, orderBy, limit, writeBatch } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
-import { firebaseConfig } from './firebase-config.js?v=11';
-import { I18N, QUICK_NOTES } from './i18n.js?v=11';
-import { DISHES, ITEMS } from './seed.js?v=11';
-import { HELP } from './help.js?v=11';
+import { firebaseConfig } from './firebase-config.js?v=12';
+import { I18N, QUICK_NOTES } from './i18n.js?v=12';
+import { DISHES, ITEMS } from './seed.js?v=12';
+import { HELP } from './help.js?v=12';
 
 const fbApp = initializeApp(firebaseConfig);
 const auth = getAuth(fbApp);
@@ -130,7 +130,7 @@ function shell() {
   const nav = r === 'cook' ? `<nav class="nav"><div class="in">${[['today', 'tabToday'], ['list', 'tabList'], ['week', 'tabWeek']].map(([k, lab]) => `<button class="${S.tab === k ? 'on' : ''}" data-act="tab" data-v="${k}">${SV[k]}${esc(t(lab))}${k === 'list' && S.shortages.length ? ` (${S.shortages.length})` : ''}</button>`).join('')}</div></nav>` : '';
   return `<header class="top"><div class="topin">
     <div class="brand">${S.depth > 0 ? `<button class="backbtn" data-act="goBack" aria-label="${esc(t('back'))}">${LANGS[l].dir === 'rtl' ? '→' : '←'}</button>` : ''}<div class="logo">${ICON}</div><div style="min-width:0"><div class="ttl">${esc((S.house && S.house.name) || t('title'))}</div><div class="sub">${esc(wdName(today()))} · ${esc(fmt(today(), { day: 'numeric', month: 'long' }))}</div></div></div>
-    <div class="actions">${r !== 'admin' ? `<button class="pill" data-act="openMsgs" aria-label="${esc(t('messages'))}">💬${unreadReplies() ? ` <b style="color:var(--acc)">${unreadReplies()}</b>` : ''}</button><button class="pill" data-act="openLang">${esc(LANGS[l].label)}</button>` : ''}<button class="pill" data-act="openHelp" aria-label="${esc(HELP[l].t.help)}">?</button><button class="pill" data-act="openMe">${esc(t('r_' + r))}</button></div>
+    <div class="actions">${r === 'admin' ? `<button class="pill" data-act="openWa" aria-label="WhatsApp">📤</button>` : ''}${r !== 'admin' ? `<button class="pill" data-act="openMsgs" aria-label="${esc(t('messages'))}">💬${unreadReplies() ? ` <b style="color:var(--acc)">${unreadReplies()}</b>` : ''}</button><button class="pill" data-act="openLang">${esc(LANGS[l].label)}</button>` : ''}<button class="pill" data-act="openHelp" aria-label="${esc(HELP[l].t.help)}">?</button><button class="pill" data-act="openMe">${esc(t('r_' + r))}</button></div>
   </div>${S.offline ? `<div class="banner">${esc(t('offline'))}</div>` : ''}</header>
   <main class="wrap">${body}</main>${nav}`;
 }
@@ -165,6 +165,7 @@ function heroMenu(date, opt) {
   const [c0, d0] = list[0];
   let h = `<div class="card hero">${heroImg(d0)}<div style="padding:10px 6px 2px"><div class="cat">${esc(t('c_' + c0))}</div>${dishNames(d0, true)}</div>`;
   if (opt.cook && !S.photos[d0.id]) h += `<div style="padding:4px 6px 0"><button class="sm soft" data-act="photo" data-v="${d0.id}">📷 ${esc(t('photoAsk'))}</button></div>`;
+  if (S.role !== 'family') { const rs = list.filter(([, d]) => (d.recipe || '').trim()); if (rs.length) h += `<div class="btns" style="padding:8px 6px 0;flex-wrap:wrap">${rs.map(([, d]) => `<button class="sm ghost" data-act="showRecipe" data-id="${d.id}">📖 ${esc(t('recipe'))}: ${esc(split(nm(d))[0])}</button>`).join('')}</div>`; }
   list.slice(1).forEach(([c, d]) => { h += `<div class="row" style="padding:10px 6px">${thumb(d)}<div class="grow">${dishNames(d)}</div><span class="meta">${esc(t('c_' + c))}</span></div>`; });
   h += `</div>` + notesHtml(m);
   if (opt.cook) h += m.seen ? `<div class="center"><span class="badge ok">✓ ${esc(t('gotIt').replace(' ✓', ''))}</span></div>` : `<button class="block" data-act="seen" data-v="${date}">${esc(t('gotIt'))}</button>`;
@@ -186,6 +187,43 @@ function weekList(start, n, admin) {
   return `<div class="card flat" style="padding:2px 14px">${h}</div>`;
 }
 
+
+/* --- WhatsApp share (admin) --- */
+const WA_KINDS = [['today', 'غداء اليوم'], ['tomorrow', 'غداء بكرة'], ['week', 'منيو الأسبوع'], ['list', 'قائمة المشتريات'], ['recipe', 'طريقة طبق'], ['note', 'تعليمات / ملاحظة']];
+const tl = (l, k) => (I18N[l] && I18N[l][k]) || I18N.en[k] || k;
+function waDay(date, l) {
+  const m = S.menus[date], loc = LANGS[l].loc;
+  const head = new Date(date + 'T12:00:00').toLocaleDateString(loc, { weekday: 'long', day: 'numeric', month: 'long' });
+  if (!m || (!m.off && !menuItems(m).length)) return head + ': ' + tl(l, 'noMenu');
+  if (m.off) return head + ': 🚫 ' + tl(l, 'noLunch');
+  let s = head + '\n' + menuItems(m).map(([c, d]) => '• ' + (d.emoji || '') + ' ' + nm(d, l) + (l !== 'ar' ? ' — ' + d.name_ar : '')).join('\n');
+  const qs = (m.notes || []).filter(k => QUICK_NOTES[k]).map(k => '📝 ' + (QUICK_NOTES[k][l] || QUICK_NOTES[k].en));
+  if (qs.length) s += '\n' + qs.join('\n');
+  if ((m.note || '').trim()) s += '\n📝 ' + m.note.trim() + (l !== 'ar' ? '\n🌐 ' + trLink(m.note.trim(), 'ar', LANGS[l].gt) : '');
+  return s;
+}
+function waText() {
+  const l = M.lang, k = M.kind, td = today(); let s = '';
+  if (k === 'today') s = '🍽️ *' + tl(l, 'today') + '*\n' + waDay(td, l);
+  else if (k === 'tomorrow') s = '🍽️ *' + tl(l, 'tomorrow') + '*\n' + waDay(addDays(td, 1), l);
+  else if (k === 'week') { s = '📅 *' + tl(l, 'weekMenu') + '*'; for (let i = 0; i < 7; i++) s += '\n\n' + waDay(addDays(td, i), l); }
+  else if (k === 'list') s = '🛒 *' + tl(l, 'toBuy') + '*\n' + (S.shortages.length ? S.shortages.map(x => { const o = (x.itemId && S.items[x.itemId]) || x; return '• ' + (o.emoji || '') + ' ' + nm(o, l) + (l !== 'ar' && o.name_ar ? ' — ' + o.name_ar : '') + ' × ' + x.qty + ' ' + tl(l, 'u_' + x.unit) + (x.note ? ' (' + x.note + ')' : ''); }).join('\n') : tl(l, 'nothingToBuy'));
+  else if (k === 'recipe') { const d = S.dishes[M.dishId]; s = d ? '📖 *' + tl(l, 'recipe') + ': ' + nm(d, l) + '*' + (l !== 'ar' ? '\n(' + d.name_ar + ')' : '') + '\n\n' + ((d.recipe || '').trim() || '—') + (l !== 'ar' && (d.recipe || '').trim() ? '\n\n🌐 ' + tl(l, 'translate') + ': ' + trLink(d.recipe.trim(), 'ar', LANGS[l].gt) : '') : ''; }
+  else if (k === 'note') s = '📌 *' + tl(l, 'instructions') + '*';
+  const ex = (M.extra || '').trim();
+  if (ex) s += '\n\n' + (k === 'note' ? '' : '📌 ') + ex + (l !== 'ar' ? '\n🌐 ' + tl(l, 'translate') + ': ' + trLink(ex, 'ar', LANGS[l].gt) : '');
+  return s + '\n\n' + SITE;
+}
+function modalWa() {
+  M.save = null;
+  let h = `<h3>📤 مشاركة عبر واتساب</h3><div class="field"><span class="flabel">ماذا ترسل؟</span><div class="chips">${WA_KINDS.map(([k, lb]) => `<button class="chip ${M.kind === k ? 'on' : ''}" data-act="waKind" data-v="${k}">${lb}</button>`).join('')}</div></div>`;
+  h += `<div class="field"><span class="flabel">بأي لغة؟</span><div class="chips">${['ar', 'hi', 'bn', 'te', 'fil', 'en'].map(k => `<button class="chip ${M.lang === k ? 'on' : ''}" data-act="waLang" data-v="${k}">${LANGS[k].label}</button>`).join('')}</div></div>`;
+  if (M.kind === 'recipe') { const ds = Object.values(S.dishes).filter(d => d.active !== false).sort((a, b) => ((b.recipe ? 1 : 0) - (a.recipe ? 1 : 0)) || (a.name_ar || '').localeCompare(b.name_ar || '', 'ar')); h += `<div class="field"><span class="flabel">الطبق ${S.dishes[M.dishId] && !S.dishes[M.dishId].recipe ? '<span class="badge gray">لا توجد طريقة محفوظة — اكتبها في الملاحظة أو من المكتبة</span>' : ''}</span><select data-m="dishId" data-act-change="waDishSel">${ds.map(d => `<option value="${d.id}" ${M.dishId === d.id ? 'selected' : ''}>${d.recipe ? '📖 ' : ''}${esc(d.name_ar)}</option>`).join('')}</select></div>`; if (!M.dishId && ds[0]) M.dishId = ds[0].id; }
+  h += `<div class="field"><label>${M.kind === 'note' ? 'اكتب التعليمات' : 'تعليمات أو ملاحظة إضافية (اختياري)'}</label><textarea data-m="extra" rows="3" placeholder="بالعربي، ويُضاف رابط ترجمة تلقائياً">${esc(M.extra || '')}</textarea></div>`;
+  h += `<div class="field"><span class="flabel">معاينة</span><div class="note" style="white-space:pre-wrap;font-size:14px;max-height:220px;overflow:auto" dir="auto" id="waPrev">${esc(waText())}</div></div>`;
+  h += `<div class="btns"><button class="block" data-act="waSend" style="background:#1FA855">إرسال عبر واتساب</button></div><button class="ghost block" style="margin-top:8px" data-act="waCopy">نسخ النص</button>`;
+  return h;
+}
 
 /* --- day views: list / cards / calendar --- */
 function viewToggle() { return `<div class="vtog">${[['list', 'vList'], ['cards', 'vCards'], ['cal', 'vCal']].map(([k, l]) => `<button class="${S.dayView === k ? 'on' : ''}" data-act="dayView" data-v="${k}">${esc(t(l))}</button>`).join('')}</div>`; }
@@ -257,7 +295,7 @@ function adminView() {
   const a = S.adminTab;
   if (a === 'menu') h += adminMenu();
   else if (a === 'inbox') h += adminInbox();
-  else if (a === 'short') h += `<div class="sec"><h2>النواقص المفتوحة</h2><button class="sm" data-act="addShort">+ إضافة</button></div>` + shortList('admin') + `<button class="ghost block" data-act="extraBuy">+ تسجيل شراء</button>`;
+  else if (a === 'short') h += `<div class="sec"><h2>النواقص المفتوحة</h2><div class="btns"><button class="sm soft" data-act="openWa" data-v="list">📤 واتساب</button><button class="sm" data-act="addShort">+ إضافة</button></div></div>` + shortList('admin') + `<button class="ghost block" data-act="extraBuy">+ تسجيل شراء</button>`;
   else if (a === 'report') h += adminReport();
   else if (a === 'lib') h += adminLib();
   else h += adminSettings();
@@ -267,7 +305,7 @@ function adminMenu() {
   const st = settings(), td = today();
   const spend = S.purchases.filter(p => p.month === monthOf(td)).reduce((a, p) => a + (Number(p.price) || 0), 0), nm2 = newMsgs();
   const stats = `<div class="stats"><button class="scard ${S.shortages.length ? 'hot' : ''}" data-act="atab" data-v="short"><b>${S.shortages.length}</b><span>نواقص مطلوبة</span></button><button class="scard ${nm2 ? 'hot' : ''}" data-act="atab" data-v="inbox"><b>${nm2}</b><span>طلبات ورسائل جديدة</span></button><button class="scard" data-act="atab" data-v="report"><b dir="ltr">${money(spend)}</b><span>مصروف هذا الشهر (د.ك)</span></button><button class="scard ${S.queue.length ? 'hot' : ''}" data-act="goPhotos"><b>${S.queue.length}</b><span>صور بانتظار اعتمادك</span></button></div>`;
-  return stats + `<div class="sec"><h2>غداء اليوم</h2>${S.menus[td] && !S.menus[td].off ? (S.menus[td].seen ? '<span class="badge ok">✓ استلم الطباخ</span>' : '<span class="badge gray">لم يستلم الطباخ بعد</span>') : ''}</div>` + heroMenu(td).replace(/<div><span class="badge ok">.*?<\/span><\/div>$/, '') + `<div class="sec"><h2>الأيام القادمة</h2>${viewToggle()}</div><div style="display:flex;justify-content:space-between;align-items:center;gap:8px"><p class="small mute" style="margin:0 2px">اضغط أي يوم لتعديله أو إضافة ملاحظة.</p><button class="sm soft" data-act="regen">${confirmKey === 'regen' ? 'اضغط للتأكيد' : '🔀 إعادة توليد'}</button></div>` + daysView(S.dayView === 'cal' ? td : addDays(td, 1), st.horizon - 1, true);
+  return stats + `<div class="sec"><h2>غداء اليوم <button class="sm soft" data-act="openWa" data-v="today" style="vertical-align:middle;margin-inline-start:6px">📤</button></h2>${S.menus[td] && !S.menus[td].off ? (S.menus[td].seen ? '<span class="badge ok">✓ استلم الطباخ</span>' : '<span class="badge gray">لم يستلم الطباخ بعد</span>') : ''}</div>` + heroMenu(td).replace(/<div><span class="badge ok">.*?<\/span><\/div>$/, '') + `<div class="sec"><h2>الأيام القادمة</h2>${viewToggle()}</div><div style="display:flex;justify-content:space-between;align-items:center;gap:8px"><p class="small mute" style="margin:0 2px">اضغط أي يوم لتعديله أو إضافة ملاحظة.</p><button class="sm soft" data-act="regen">${confirmKey === 'regen' ? 'اضغط للتأكيد' : '🔀 إعادة توليد'}</button></div>` + daysView(S.dayView === 'cal' ? td : addDays(td, 1), st.horizon - 1, true);
 }
 function adminLib() {
   let h = `<div class="seg" style="grid-template-columns:repeat(3,1fr)">${[['dishes', 'الأطباق'], ['items', 'السلع'], ['photos', 'صور بانتظارك' + (S.queue.length ? ` (${S.queue.length})` : '')]].map(([k, l]) => `<button class="${S.libTab === k ? 'on' : ''}" data-act="ltab" data-v="${k}">${l}</button>`).join('')}</div>`;
@@ -375,6 +413,8 @@ function renderModal() {
   if (M.type === 'lang') h += `<h3>${esc(t('language'))}</h3>${langChips(S.lang)}`;
   else if (M.type === 'me') h += `<h3>${esc(t('r_' + S.role))}</h3><p class="mute">${esc((S.house && S.house.name) || '')} · <span dir="ltr">${esc(S.hid)}</span></p>${S.role !== 'admin' ? `<div class="field"><span class="flabel">${esc(t('language'))}</span>${langChips(S.lang || 'ar')}</div>` : ''}<div class="field"><span class="flabel">${esc(t('theme'))}</span><div class="seg" style="grid-template-columns:repeat(3,1fr);margin-top:6px">${['auto', 'light', 'dark'].map(v => `<button class="${(ls('theme') || 'auto') === v ? 'on' : ''}" data-act="setTheme" data-v="${v}">${esc(t('th_' + v))}</button>`).join('')}</div></div><div class="field"><span class="flabel">${esc(t('bioLock'))}</span><button class="${ls('bioId') ? 'soft' : 'ghost'} block" data-act="bioToggle">${ls('bioId') ? '🔒 ' + esc(t('bioIsOn')) : '🔓 ' + esc(t('bioTurnOn'))}</button><p class="small mute" style="margin:6px 2px 0">${esc(t('bioHint'))}</p></div><button class="ghost block" data-act="logout">${esc(confirmKey === 'logout' ? t('logoutAsk') : t('logout'))}</button>`;
   else if (M.type === 'short') h += modalShort();
+  else if (M.type === 'wa') h += modalWa();
+  else if (M.type === 'recipe') { const d = S.dishes[M.id]; if (d) h += `<h3>📖 ${esc(split(nm(d))[0])}</h3><div class="note" dir="rtl" style="white-space:pre-wrap;font-family:'IBM Plex Sans Arabic',sans-serif">${esc(d.recipe || '')}</div>${L() !== 'ar' ? `<a class="block" style="display:block;text-align:center;margin-top:10px" href="${trLink(d.recipe || '', 'ar', LANGS[L()].gt)}" target="_blank" rel="noopener">🌐 ${esc(t('translate'))} ›</a>` : ''}`; }
   else if (M.type === 'buy') h += modalBuy();
   else if (M.type === 'day') h += modalDay();
   else if (M.type === 'dish') h += modalDish();
@@ -441,7 +481,7 @@ function nameFields() { return ['ar', 'en', 'hi', 'bn', 'te', 'fil'].map(l => `<
 function modalDish() {
   M.save = 'saveDish';
   const d = M.id && S.dishes[M.id];
-  return `<h3>${M.id ? 'تعديل طبق' : 'طبق جديد'}</h3>${d ? heroImg(d) : ''}<div class="btns" style="margin-top:8px"><button class="sm soft" data-act="adminPhoto">📷 ${d && S.photos[d.id] ? 'تغيير صورتكم' : 'رفع صورة'}</button>${d && S.photos[d.id] ? `<button class="sm danger" data-act="delPhoto">حذف صورتكم</button>` : ''}</div>${nameFields()}<p class="small mute" style="margin-top:-6px">للأطباق الكويتية: اكتب الاسم بالنطق الكويتي ثم الشرح بين قوسين، مثل: मचबूस दियाय (मसाला चावल और चिकन)</p><div class="two"><div class="field"><label>القسم</label><select data-m="cat">${CATS.map(c => `<option value="${c}" ${M.cat === c ? 'selected' : ''}>${esc(t('c_' + c))}</option>`).join('')}</select></div><div class="field"><label>رمز</label><input data-m="emoji" value="${esc(M.emoji || '')}" style="text-align:center;font-size:22px"></div></div><label class="chk"><input type="checkbox" data-m="pairRice" ${M.pairRice ? 'checked' : ''}><span>يُقدَّم مع عيش (يضيف التطبيق صنف عيش تلقائياً)</span></label>${M.id ? `<button class="sm danger" data-act="delDish">${confirmKey === 'dish' ? 'اضغط مرة أخرى للتأكيد' : 'حذف الطبق'}</button>` : ''}`;
+  return `<h3>${M.id ? 'تعديل طبق' : 'طبق جديد'}</h3>${d ? heroImg(d) : ''}<div class="btns" style="margin-top:8px"><button class="sm soft" data-act="adminPhoto">📷 ${d && S.photos[d.id] ? 'تغيير صورتكم' : 'رفع صورة'}</button>${d && S.photos[d.id] ? `<button class="sm danger" data-act="delPhoto">حذف صورتكم</button>` : ''}</div>${nameFields()}<p class="small mute" style="margin-top:-6px">للأطباق الكويتية: اكتب الاسم بالنطق الكويتي ثم الشرح بين قوسين، مثل: मचबूस दियाय (मसाला चावल और चिकन)</p><div class="two"><div class="field"><label>القسم</label><select data-m="cat">${CATS.map(c => `<option value="${c}" ${M.cat === c ? 'selected' : ''}>${esc(t('c_' + c))}</option>`).join('')}</select></div><div class="field"><label>رمز</label><input data-m="emoji" value="${esc(M.emoji || '')}" style="text-align:center;font-size:22px"></div></div><label class="chk"><input type="checkbox" data-m="pairRice" ${M.pairRice ? 'checked' : ''}><span>يُقدَّم مع عيش (يضيف التطبيق صنف عيش تلقائياً)</span></label><div class="field"><label>طريقة التحضير (تظهر للطباخ مع زر ترجمة)</label><textarea data-m="recipe" rows="5" placeholder="المقادير والخطوات…">${esc(M.recipe || '')}</textarea></div>${M.id ? `<button class="sm soft" data-act="openWa" data-v="recipe" data-id="${M.id}">📤 أرسل الطريقة للطباخ بالواتساب</button> ` : ''}${M.id ? `<button class="sm danger" data-act="delDish">${confirmKey === 'dish' ? 'اضغط مرة أخرى للتأكيد' : 'حذف الطبق'}</button>` : ''}`;
 }
 function modalItem() { M.save = 'saveItem'; return `<h3>${M.id ? 'تعديل سلعة' : 'سلعة جديدة'}</h3>${nameFields()}<div class="two"><div class="field"><label>الوحدة</label><select data-m="unit">${UNITS.map(u => `<option value="${u}" ${M.unit === u ? 'selected' : ''}>${esc(unitL(u))}</option>`).join('')}</select></div><div class="field"><label>رمز</label><input data-m="emoji" value="${esc(M.emoji || '')}" style="text-align:center;font-size:22px"></div></div>${M.id ? `<button class="sm danger" data-act="delItem">${confirmKey === 'item' ? 'اضغط مرة أخرى للتأكيد' : 'حذف السلعة'}</button>` : ''}`; }
 
@@ -498,6 +538,13 @@ const ACT = {
   setLang(v) { S.lang = v; ls('lang', v); if (S.view === 'app' && S.uid && S.hid) updateDoc(H('members', S.uid), { lang: v }).catch(() => {}); closeModal(); render(); },
   openLang() { openModal({ type: 'lang' }); },
   openHelp() { openModal({ type: 'help' }); },
+  openWa(v, id) { const prev = M && M.type === 'dish' ? M : null; openModal({ type: 'wa', kind: v || 'today', lang: ls('waLang') || 'ar', dishId: id || null, extra: '', back: prev }); },
+  waKind(v) { M.kind = v; renderModal(); },
+  waLang(v) { M.lang = v; ls('waLang', v); renderModal(); },
+  waDish(v, id) { M.dishId = id; renderModal(); },
+  waSend() { const txt = waText(); try { window.open('https://wa.me/?text=' + encodeURIComponent(txt), '_blank'); } catch (e) { } },
+  async waCopy() { try { await navigator.clipboard.writeText(waText()); toast('تم النسخ'); } catch (e) { } },
+  showRecipe(v, id) { openModal({ type: 'recipe', id }); },
   cancelDel() { confirmKey = null; render(); },
   setTheme(v) { ls('theme', v); applyTheme(); renderModal(); },
   async bioToggle() { if (ls('bioId')) { ls('bioId', null); toast(t('bioOffd')); renderModal(); return; } await bioEnroll(); renderModal(); },
@@ -610,12 +657,12 @@ const ACT = {
     for (const d of ds) { await deleteDoc(H('menu', d)); delete S.menus[d]; }
     genDone = false; await maybeGenerate(true); toast('تم توليد منيو جديد');
   },
-  dish(v, id) { const d = id ? S.dishes[id] : null; confirmKey = null; openModal(Object.assign({ type: 'dish', id: id || null, cat: 'main', emoji: '🍽️' }, d ? { name_ar: d.name_ar, name_en: d.name_en, name_hi: d.name_hi, name_bn: d.name_bn, name_te: d.name_te, name_fil: d.name_fil, cat: d.cat, emoji: d.emoji, pairRice: d.pair === 'rice' } : {})); },
+  dish(v, id) { const d = id ? S.dishes[id] : null; confirmKey = null; openModal(Object.assign({ type: 'dish', id: id || null, cat: 'main', emoji: '🍽️' }, d ? { name_ar: d.name_ar, name_en: d.name_en, name_hi: d.name_hi, name_bn: d.name_bn, name_te: d.name_te, name_fil: d.name_fil, cat: d.cat, emoji: d.emoji, pairRice: d.pair === 'rice', recipe: d.recipe || '' } : {})); },
   item(v, id) { const d = id ? S.items[id] : null; confirmKey = null; openModal(Object.assign({ type: 'item', id: id || null, unit: 'pcs', emoji: '🛒' }, d ? { name_ar: d.name_ar, name_en: d.name_en, name_hi: d.name_hi, name_bn: d.name_bn, name_te: d.name_te, name_fil: d.name_fil, unit: d.unit, emoji: d.emoji } : {})); },
   async saveDish() {
     if (!(M.name_ar || '').trim()) return toast('اكتب الاسم');
     const id = M.id || ('d-' + Date.now().toString(36)), old = S.dishes[id] || {};
-    const data = { name_ar: M.name_ar.trim(), name_en: (M.name_en || '').trim(), name_hi: (M.name_hi || '').trim(), name_bn: (M.name_bn || '').trim(), name_te: (M.name_te || '').trim(), name_fil: (M.name_fil || '').trim(), cat: M.cat, emoji: (M.emoji || '').trim() || '🍽️', active: old.active !== false, pair: M.pairRice ? 'rice' : null };
+    const data = { name_ar: M.name_ar.trim(), name_en: (M.name_en || '').trim(), name_hi: (M.name_hi || '').trim(), name_bn: (M.name_bn || '').trim(), name_te: (M.name_te || '').trim(), name_fil: (M.name_fil || '').trim(), cat: M.cat, emoji: (M.emoji || '').trim() || '🍽️', active: old.active !== false, pair: M.pairRice ? 'rice' : null, recipe: (M.recipe || '').trim() };
     if (old.photo) data.photo = old.photo;
     await setDoc(H('dishes', id), data); toast('تم الحفظ'); closeModal();
   },
@@ -742,7 +789,7 @@ onAuthStateChanged(auth, async u => {
 });
 if ('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js').then(r => { document.addEventListener('visibilitychange', () => { if (!document.hidden) r.update().catch(() => { }); }); }).catch(() => { });
 /* --- update check: compare baked version with version.json --- */
-const APP_V = '11';
+const APP_V = '12';
 let updShown = false;
 function checkUpdate() {
   if (updShown) return;
@@ -827,3 +874,7 @@ async function bioUnlock() {
 }
 showLock();
 document.addEventListener('visibilitychange', () => { if (document.hidden) hiddenAt = Date.now(); else if (hiddenAt && Date.now() - hiddenAt > 60000) showLock(); });
+
+/* --- WhatsApp modal: live preview --- */
+document.addEventListener('input', e => { if (M && M.type === 'wa' && e.target.closest('#sheet')) { syncModal(); const p = document.getElementById('waPrev'); if (p) p.textContent = waText(); } });
+document.addEventListener('change', e => { if (M && M.type === 'wa' && e.target.matches('#sheet select[data-m="dishId"]')) { syncModal(); renderModal(); } });

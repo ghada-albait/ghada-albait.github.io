@@ -1,6 +1,9 @@
 // Interface translations (ar, en, hi, bn, fil)
 export const I18N = {
 "ar": {
+"recipe": "طريقة التحضير",
+"weekMenu": "منيو الأيام القادمة",
+"instructions": "تعليمات",
 "title": "غداء البيت",
 "today": "غداء اليوم",
 "tomorrow": "غداء الغد",
@@ -125,6 +128,9 @@ export const I18N = {
 "toTop": "للأعلى"
 },
 "en": {
+"recipe": "How to cook",
+"weekMenu": "Menu for the coming days",
+"instructions": "Instructions",
 "title": "Home Lunch",
 "today": "Today's lunch",
 "tomorrow": "Tomorrow's lunch",
@@ -249,6 +255,9 @@ export const I18N = {
 "toTop": "To top"
 },
 "hi": {
+"recipe": "बनाने का तरीका",
+"weekMenu": "आने वाले दिनों का मेनू",
+"instructions": "निर्देश",
 "title": "घर का खाना",
 "today": "आज का दोपहर का खाना",
 "tomorrow": "कल का दोपहर का खाना",
@@ -373,6 +382,9 @@ export const I18N = {
 "toTop": "ऊपर"
 },
 "bn": {
+"recipe": "রান্নার নিয়ম",
+"weekMenu": "আগামী দিনের মেনু",
+"instructions": "নির্দেশনা",
 "title": "বাড়ির খাবার",
 "today": "আজকের দুপুরের খাবার",
 "tomorrow": "আগামীকালের দুপুরের খাবার",
@@ -497,6 +509,9 @@ export const I18N = {
 "toTop": "উপরে"
 },
 "fil": {
+"recipe": "Paano lutuin",
+"weekMenu": "Menu sa mga susunod na araw",
+"instructions": "Mga tagubilin",
 "title": "Tanghalian sa Bahay",
 "today": "Tanghalian ngayon",
 "tomorrow": "Tanghalian bukas",
@@ -621,6 +636,9 @@ export const I18N = {
 "toTop": "Itaas"
 },
 "te": {
+"recipe": "వండే విధానం",
+"weekMenu": "రాబోయే రోజుల మెనూ",
+"instructions": "సూచనలు",
 "title": "ఇంటి భోజనం",
 "today": "ఈరోజు మధ్యాహ్న భోజనం",
 "tomorrow": "రేపటి మధ్యాహ్న భోజనం",
