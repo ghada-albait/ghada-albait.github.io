@@ -37,7 +37,7 @@ const SV = {
 /* ---------------- state ---------------- */
 const S = {
   uid: null, hid: null, role: null, lang: null, house: null,
-  dishes: {}, items: {}, menus: {}, shortages: [], purchases: [], photos: {}, subs: [], members: [], queue: [],
+  dishes: {}, items: {}, menus: {}, shortages: [], purchases: [], photos: {}, subs: [], members: [], queue: [], msgs: [], myMsgs: [],
   loaded: {}, view: 'login', tab: 'today', adminTab: 'menu', libTab: 'dishes', month: null, offline: !navigator.onLine
 };
 let M = null, pending = false, confirmKey = null, unsubs = [], genDone = false, genRunning = false;
@@ -123,7 +123,7 @@ function shell() {
   const nav = r === 'cook' ? `<nav class="nav"><div class="in">${[['today', 'tabToday'], ['list', 'tabList'], ['week', 'tabWeek']].map(([k, lab]) => `<button class="${S.tab === k ? 'on' : ''}" data-act="tab" data-v="${k}">${SV[k]}${esc(t(lab))}${k === 'list' && S.shortages.length ? ` (${S.shortages.length})` : ''}</button>`).join('')}</div></nav>` : '';
   return `<header class="top"><div class="topin">
     <div class="brand"><div class="logo">${ICON}</div><div style="min-width:0"><div class="ttl">${esc((S.house && S.house.name) || t('title'))}</div><div class="sub">${esc(wdName(today()))} · ${esc(fmt(today(), { day: 'numeric', month: 'long' }))}</div></div></div>
-    <div class="actions">${r !== 'admin' ? `<button class="pill" data-act="openLang">${esc(LANGS[l].label)}</button>` : ''}<button class="pill" data-act="openMe">${esc(t('r_' + r))}</button></div>
+    <div class="actions">${r !== 'admin' ? `<button class="pill" data-act="openMsgs" aria-label="${esc(t('messages'))}">💬${unreadReplies() ? ` <b style="color:var(--acc)">${unreadReplies()}</b>` : ''}</button><button class="pill" data-act="openLang">${esc(LANGS[l].label)}</button>` : ''}<button class="pill" data-act="openMe">${esc(t('r_' + r))}</button></div>
   </div>${S.offline ? `<div class="banner">${esc(t('offline'))}</div>` : ''}</header>
   <main class="wrap">${body}</main>${nav}`;
 }
@@ -211,11 +211,12 @@ function driverView() {
   return h;
 }
 /* --- admin --- */
-const TABS = [['menu', 'المنيو'], ['short', 'النواقص'], ['report', 'التقارير'], ['lib', 'المكتبة'], ['set', 'الإعدادات']];
+const TABS = [['menu', 'المنيو'], ['inbox', 'الطلبات'], ['short', 'النواقص'], ['report', 'التقارير'], ['lib', 'المكتبة'], ['set', 'الإعدادات']];
 function adminView() {
-  let h = `<div class="seg" style="grid-template-columns:repeat(5,1fr)">${TABS.map(([k, l]) => `<button class="${S.adminTab === k ? 'on' : ''}" data-act="atab" data-v="${k}">${l}${k === 'short' && S.shortages.length ? ` (${S.shortages.length})` : ''}${k === 'lib' && S.queue.length ? ` (${S.queue.length})` : ''}</button>`).join('')}</div>`;
+  let h = `<div class="seg" style="grid-template-columns:repeat(3,1fr)">${TABS.map(([k, l]) => `<button class="${S.adminTab === k ? 'on' : ''}" data-act="atab" data-v="${k}">${l}${k === 'inbox' && newMsgs() ? ` (${newMsgs()})` : ''}${k === 'short' && S.shortages.length ? ` (${S.shortages.length})` : ''}${k === 'lib' && S.queue.length ? ` (${S.queue.length})` : ''}</button>`).join('')}</div>`;
   const a = S.adminTab;
   if (a === 'menu') h += adminMenu();
+  else if (a === 'inbox') h += adminInbox();
   else if (a === 'short') h += `<div class="sec"><h2>النواقص المفتوحة</h2><button class="sm" data-act="addShort">+ إضافة</button></div>` + shortList('admin') + `<button class="ghost block" data-act="extraBuy">+ تسجيل شراء</button>`;
   else if (a === 'report') h += adminReport();
   else if (a === 'lib') h += adminLib();
@@ -251,6 +252,41 @@ function adminSettings() {
   h += `<div class="sec"><h2>تركيبة الغداء اليومي</h2></div><div class="card flat">` + CATS.map(c => `<div class="row"><div class="grow nm" style="font-size:15px">${esc(t('c_' + c))}${c === 'rice' ? '<div class="meta">يُضاف تلقائياً مع المرق والمشاوي</div>' : ''}</div><select data-s="count_${c}" style="width:120px">${[0, 1, 2, 3].map(n => `<option value="${n}" ${st.counts[c] == n ? 'selected' : ''}>${n === 0 ? (c === 'rice' ? 'تلقائي' : 'بدون') : n}</option>`).join('')}</select></div>`).join('') + `</div>`;
   h += `<div class="card flat"><div class="field" style="margin-top:0"><label>عدم تكرار الطبق الرئيسي قبل (أيام)</label><input data-s="noRepeat" type="number" min="1" max="60" value="${esc(st.noRepeat)}"></div><div class="field"><label>تجهيز المنيو مسبقاً لعدد أيام</label><input data-s="horizon" type="number" min="3" max="30" value="${esc(st.horizon)}"></div><div class="field"><label>أيام بدون غداء في البيت</label>${WD_AR.map((w, i) => `<label class="chk"><input type="checkbox" data-s="off_${i}" ${(st.offDays || []).includes(i) ? 'checked' : ''}><span>${w}</span></label>`).join('')}</div><button class="block" data-act="saveSettings">حفظ الإعدادات</button></div>`;
   h += `<div class="card flat"><button class="ghost block" data-act="logout">${confirmKey === 'logout' ? 'اضغط مرة أخرى للخروج' : 'خروج من هذا الجهاز'}</button></div>`;
+  return h;
+}
+
+/* --- messages --- */
+const newMsgs = () => S.msgs.filter(m => m.status !== 'done').length;
+const unreadReplies = () => { const seen = +(ls('msgSeen_' + S.hid) || 0); return S.myMsgs.filter(m => (m.replyAt || m.doneAt || 0) > seen).length; };
+const trLink = (txt, from, to) => `https://translate.google.com/?sl=${from}&tl=${to}&op=translate&text=${encodeURIComponent(txt)}`;
+function timeAgo(ts) { try { return new Date(ts).toLocaleString(LANGS[L()].loc, { weekday: 'short', hour: 'numeric', minute: '2-digit' }); } catch (e) { return ''; } }
+function msgDish(m, lang) { const d = m.dishId && S.dishes[m.dishId]; if (!d) return ''; return `<div class="row" style="padding:8px 0;border:0">${thumb(d)}<div class="grow"><div class="nm">${esc(split(nm(d, lang))[0])}</div><div class="meta">${m.date ? esc(wdName(m.date)) + ' ' + esc(fmt(m.date, { day: 'numeric', month: 'short' })) : esc(t('anyDay'))}</div></div></div>`; }
+function adminInbox() {
+  const open = S.msgs.filter(m => m.status !== 'done').sort((a, b) => b.at - a.at), done = S.msgs.filter(m => m.status === 'done').sort((a, b) => b.at - a.at);
+  const card = m => `<div class="card flat"><div style="display:flex;justify-content:space-between;gap:8px;align-items:center"><span class="badge ${m.type === 'suggest' ? '' : 'gray'}">${m.type === 'suggest' ? '🍽️ اقتراح طبق' : '💬 رسالة'} · ${ROLE_AR[m.from] || ''}</span><span class="meta">${esc(timeAgo(m.at))}</span></div>${msgDish(m, 'ar')}${m.text ? `<p style="margin:8px 0 0">${esc(m.text)}${m.lang && m.lang !== 'ar' ? ` <a class="small" href="${trLink(m.text, 'auto', 'ar')}" target="_blank" rel="noopener">ترجم ›</a>` : ''}</p>` : ''}${m.reply ? `<div class="note" style="margin:10px 0 0"><b>ردّك</b>${esc(m.reply)}</div>` : ''}${m.status !== 'done' ? `<div class="btns" style="margin-top:10px">${m.type === 'suggest' && S.dishes[m.dishId] ? `<button class="sm" data-act="msgToMenu" data-id="${m.id}">أضف للمنيو</button>` : ''}<button class="sm ghost" data-act="msgReply" data-id="${m.id}">رد</button><button class="sm soft" data-act="msgDone" data-id="${m.id}">تم</button></div>` : `<div style="margin-top:8px"><button class="icon" data-act="msgDel" data-id="${m.id}">${confirmKey === 'm' + m.id ? 'تأكيد الحذف؟' : 'حذف'}</button></div>`}</div>`;
+  let h = `<div class="sec"><h2>طلبات ورسائل جديدة</h2></div>` + (open.length ? open.map(card).join('') : `<div class="card empty">لا توجد طلبات جديدة</div>`);
+  if (done.length) h += `<div class="card flat"><details><summary>المنتهية (${done.length})</summary>${done.slice(0, 30).map(card).join('')}</details></div>`;
+  return h;
+}
+function myMsgsHtml() {
+  const list = S.myMsgs.slice().sort((a, b) => b.at - a.at);
+  if (!list.length) return `<div class="empty">${esc(t('noMsgs'))}</div>`;
+  return list.map(m => `<div class="card flat" style="margin:8px 0"><div style="display:flex;justify-content:space-between;gap:8px"><span class="badge ${m.status === 'done' ? 'ok' : 'gray'}">${esc(m.status === 'done' ? t('st_done') : t('st_new'))}</span><span class="meta">${esc(timeAgo(m.at))}</span></div>${msgDish(m)}${m.text ? `<p style="margin:6px 0 0">${esc(m.text)}</p>` : ''}${m.reply ? `<div class="note" style="margin:8px 0 0"><b>${esc(t('reply'))}</b><div dir="rtl">${esc(m.reply)}${L() !== 'ar' ? ` <a class="tr" href="${trLink(m.reply, 'ar', LANGS[L()].gt)}" target="_blank" rel="noopener">${esc(t('translate'))} ›</a>` : ''}</div></div>` : ''}</div>`).join('');
+}
+function modalMsgs() { M.save = null; return `<h3>${esc(t('messages'))}</h3><div class="two"><button data-act="compose" data-v="suggest">🍽️ ${esc(t('suggestDish'))}</button><button class="soft" data-act="compose" data-v="msg">💬 ${esc(t('msgAdmin'))}</button></div>${myMsgsHtml()}`; }
+function dishTile(d) { const k = [d.name_ar, d.name_en, d.name_hi, d.name_bn, d.name_fil].join(' ').toLowerCase(); const s = photoSrc(d); return `<button class="tile" data-act="pickDish" data-id="${d.id}" data-key="${esc(k)}">${s ? `<img src="${esc(s)}" alt="" loading="lazy" style="width:100%;height:64px;object-fit:cover;border-radius:10px">` : `<span class="te">${esc(d.emoji || '🍽️')}</span>`}<span>${esc(split(nm(d))[0])}</span></button>`; }
+function modalCompose() {
+  if (M.kind === 'suggest' && !M.dishId) {
+    M.save = null;
+    const ds = Object.values(S.dishes).filter(d => d.active !== false && ['main', 'soup', 'dessert', 'salad', 'side'].includes(d.cat)).sort((a, b) => split(nm(a))[0].localeCompare(split(nm(b))[0]));
+    return `<h3>${esc(t('chooseDish'))}</h3><input data-filter data-m="q" placeholder="🔍 ${esc(t('search'))}" autocomplete="off"><div class="grid" id="grid">${ds.map(dishTile).join('')}</div>`;
+  }
+  M.save = 'sendMsg'; M.saveLabel = t('send');
+  let h = `<h3>${esc(M.kind === 'suggest' ? t('suggestDish') : t('msgAdmin'))}</h3>`;
+  if (M.kind === 'suggest') {
+    const d = S.dishes[M.dishId], days = [null]; for (let i = 0; i < 7; i++) days.push(addDays(today(), i));
+    h += `<div class="card flat" style="margin-top:0;display:flex;align-items:center;gap:12px">${thumb(d)}<div class="grow"><div class="nm">${esc(split(nm(d))[0])}</div></div><button class="sm ghost" data-act="unpickDish">${esc(t('back'))}</button></div><div class="field"><span class="flabel">${esc(t('whichDay'))}</span><div class="chips">${days.map(x => `<button class="chip ${M.date === x ? 'on' : ''}" data-act="msgDay" data-v="${x || ''}">${esc(x ? wdName(x) : t('anyDay'))}</button>`).join('')}</div></div><div class="field"><label>${esc(t('optionalNote'))}</label><input data-m="text" value="${esc(M.text || '')}"></div>`;
+  } else h += `<div class="field"><textarea data-m="text" placeholder="${esc(t('writeMsg'))}">${esc(M.text || '')}</textarea></div>`;
   return h;
 }
 function monthLabel(m, short) { try { return new Date(+m.slice(0, 4), +m.slice(5, 7) - 1, 1).toLocaleDateString('ar-KW-u-nu-latn', short ? { month: 'short' } : { month: 'long', year: 'numeric' }); } catch (e) { return m; } }
@@ -296,6 +332,10 @@ function renderModal() {
   else if (M.type === 'day') h += modalDay();
   else if (M.type === 'dish') h += modalDish();
   else if (M.type === 'item') h += modalItem();
+  else if (M.type === 'msgs') h += modalMsgs();
+  else if (M.type === 'compose') h += modalCompose();
+  else if (M.type === 'reply') h += `<h3>رد على الرسالة</h3><div class="field"><textarea data-m="reply" placeholder="يظهر للمرسل مع زر ترجمة">${esc(M.reply || '')}</textarea></div>`;
+  else if (M.type === 'pickDate') h += `<h3>أي يوم؟</h3><div class="chips">${Array.from({ length: 14 }, (_, i) => addDays(today(), i)).map(x => `<button class="chip" data-act="msgToMenuDate" data-v="${x}">${esc(wdName(x))} ${esc(fmt(x, { day: 'numeric' }))}</button>`).join('')}</div>`;
   else if (M.type === 'pin') h += `<h3>رمز ${ROLE_AR[M.role]}</h3><div class="field"><label>الرمز الجديد (${M.role === 'admin' ? '6' : '4 إلى 6'} أرقام)</label><input data-m="pin" class="pinbox" inputmode="numeric" maxlength="6" value="${esc(M.pin || '')}"></div><p class="small mute">احفظ الرمز عندك، فالتطبيق لا يعرضه بعد الحفظ.</p>`;
   else if (M.type === 'invite') h += `<h3>دعوة ${ROLE_AR[M.role]}</h3><div class="field"><label>اكتب رمز ${ROLE_AR[M.role]} ليُضاف للرسالة</label><input data-m="pin" class="pinbox" inputmode="numeric" maxlength="6" value="${esc(M.pin || '')}"></div><div class="field"><label>لغة الرسالة</label><div class="chips">${['hi', 'bn', 'fil', 'en', 'ar'].map(k => `<button class="chip ${M.lang === k ? 'on' : ''}" data-act="invLang" data-v="${k}">${LANGS[k].label}</button>`).join('')}</div></div>`;
   h += `<div class="btns"><button class="ghost" data-act="closeModal">${esc(t('cancel'))}</button>${M.save ? `<button data-act="${M.save}" ${M.busy ? 'disabled' : ''}>${M.busy ? '<span class="spin"></span>' : esc(M.saveLabel || t('save'))}</button>` : ''}</div>`;
@@ -483,7 +523,7 @@ const ACT = {
   async saveDay() {
     M.busy = true; renderModal();
     const note = (M.note || '').trim(), changed = JSON.stringify([M.items, !!M.off, note, M.notes]) !== M.orig;
-    try { await setDoc(H('menu', M.date), { date: M.date, items: M.off ? {} : M.items, off: !!M.off, note, notes: M.notes, auto: false, seen: changed ? null : M.seen }); toast('تم الحفظ'); closeModal(); }
+    try { await setDoc(H('menu', M.date), { date: M.date, items: M.off ? {} : M.items, off: !!M.off, note, notes: M.notes, auto: false, seen: changed ? null : M.seen }); const fm = M.fromMsg; toast('تم الحفظ'); closeModal(); if (fm) updateDoc(H('messages', fm), { status: 'done', doneAt: Date.now(), reply: 'تمت إضافته للمنيو ✓', replyAt: Date.now() }).catch(() => {}); }
     catch (e) { M.busy = false; renderModal(); toast(errMsg(e)); }
   },
   async regen() {
@@ -517,6 +557,24 @@ const ACT = {
   async reject(v, id) { await deleteDoc(H('photoSubmissions', id)); },
   async delPurchase(v, id) { if (confirmKey !== 'p' + id) { confirmKey = 'p' + id; render(); return; } confirmKey = null; await deleteDoc(H('purchases', id)); },
   async kick(v, id) { if (confirmKey !== 'k' + id) { confirmKey = 'k' + id; render(); return; } confirmKey = null; await deleteDoc(H('members', id)); toast('تم'); },
+
+  openMsgs() { ls('msgSeen_' + S.hid, String(Date.now())); openModal({ type: 'msgs' }); render(); },
+  compose(v) { openModal({ type: 'compose', kind: v, dishId: null, date: null, text: '', q: '' }); },
+  pickDish(v, id) { M.dishId = id; renderModal(); },
+  unpickDish() { M.dishId = null; renderModal(); },
+  msgDay(v) { M.date = v || null; renderModal(); },
+  async sendMsg() {
+    const text = (M.text || '').trim(); if (M.kind === 'msg' && !text) return toast(t('writeMsg'));
+    M.busy = true; renderModal();
+    try { await addDoc(HC('messages'), { type: M.kind, dishId: M.kind === 'suggest' ? M.dishId : null, date: M.kind === 'suggest' ? (M.date || null) : null, text, from: S.role, fromUid: S.uid, lang: L(), at: Date.now(), status: 'new' }); toast(t('msgSent')); openModal({ type: 'msgs' }); }
+    catch (e) { M.busy = false; renderModal(); toast(errMsg(e)); }
+  },
+  msgReply(v, id) { const m = S.msgs.find(x => x.id === id); openModal({ type: 'reply', id, reply: (m && m.reply) || '', save: 'saveReply', saveLabel: 'إرسال الرد' }); },
+  async saveReply() { const r = (M.reply || '').trim(); if (!r) return toast('اكتب الرد'); await updateDoc(H('messages', M.id), { reply: r, replyAt: Date.now() }); toast('تم إرسال الرد'); closeModal(); },
+  async msgDone(v, id) { await updateDoc(H('messages', id), { status: 'done', doneAt: Date.now() }); },
+  async msgDel(v, id) { if (confirmKey !== 'm' + id) { confirmKey = 'm' + id; render(); return; } confirmKey = null; await deleteDoc(H('messages', id)); },
+  msgToMenu(v, id) { const m = S.msgs.find(x => x.id === id); if (!m) return; S._msg = m; if (m.date) return ACT.msgToMenuDate(m.date); openModal({ type: 'pickDate' }); },
+  msgToMenuDate(date) { const m = S._msg, d = m && S.dishes[m.dishId]; if (!d) return; ACT.editDay(date); const c = d.cat; M.items[c] = (M.items[c] || []).filter(x => x !== d.id); if (c === 'main') M.items.main = [d.id]; else M.items[c].push(d.id); M.fromMsg = m.id; renderModal(); },
   setPin(r) { openModal({ type: 'pin', role: r, pin: '', save: 'savePin', saveLabel: 'حفظ الرمز' }); },
   async savePin() {
     const pin = (M.pin || '').trim(), r = M.role;
@@ -558,7 +616,7 @@ window.addEventListener('online', () => { S.offline = false; schedule(); });
 window.addEventListener('offline', () => { S.offline = true; schedule(); });
 
 /* ---------------- data ---------------- */
-function stop() { roleSubsOn = false; unsubs.forEach(u => { try { u(); } catch (e) { } }); unsubs = []; Object.assign(S, { dishes: {}, items: {}, menus: {}, shortages: [], purchases: [], photos: {}, members: [], queue: [], loaded: {}, house: null }); genDone = false; }
+function stop() { roleSubsOn = false; unsubs.forEach(u => { try { u(); } catch (e) { } }); unsubs = []; Object.assign(S, { dishes: {}, items: {}, menus: {}, shortages: [], purchases: [], photos: {}, members: [], queue: [], msgs: [], myMsgs: [], loaded: {}, house: null }); genDone = false; }
 function sub(ref, key, fn, onErr) { unsubs.push(onSnapshot(ref, snap => { fn(snap); S.loaded[key] = true; if (key === 'dishes' || key === 'menu' || key === 'house') maybeGenerate(); schedule(); }, err => { console.warn(key, err); if (onErr) onErr(err); S.loaded[key] = true; schedule(); })); }
 function start(hid) {
   stop(); S.hid = hid; S.view = 'app'; render();
@@ -580,7 +638,9 @@ function attachRoleSubs() {
   sub(HC('dishPhotos'), 'photos', s => { const o = {}; s.forEach(d => { o[d.id] = d.data().data; }); S.photos = o; });
   if (r !== 'family') sub(HC('shortages'), 'shortages', s => { S.shortages = s.docs.map(d => Object.assign({ id: d.id }, d.data())).sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0)); });
   if (r === 'admin' || r === 'driver') sub(query(HC('purchases'), orderBy('ts', 'desc'), limit(1500)), 'purchases', s => { S.purchases = s.docs.map(d => Object.assign({ id: d.id }, d.data())); });
+  if (r !== 'admin') sub(query(HC('messages'), where('fromUid', '==', S.uid)), 'myMsgs', s => { S.myMsgs = s.docs.map(d => Object.assign({ id: d.id }, d.data())); if (M && M.type === 'msgs') renderModal(); });
   if (r === 'admin') {
+    sub(HC('messages'), 'msgs', s => { S.msgs = s.docs.map(d => Object.assign({ id: d.id }, d.data())); });
     sub(HC('members'), 'members', s => { S.members = s.docs.map(d => Object.assign({ id: d.id }, d.data())); });
     sub(HC('photoSubmissions'), 'queue', s => { S.queue = s.docs.map(d => Object.assign({ id: d.id }, d.data())); });
   }

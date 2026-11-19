@@ -64,6 +64,15 @@ service cloud.firestore {
         allow update, delete: if isAdmin(h);
       }
 
+      match /messages/{id} {
+        allow read: if isAdmin(h) || (isMember(h) && resource.data.fromUid == request.auth.uid);
+        allow create: if isMember(h) && request.resource.data.fromUid == request.auth.uid
+          && request.resource.data.from == role(h) && request.resource.data.status == 'new'
+          && request.resource.data.text.size() < 2000;
+        allow update: if isAdmin(h);
+        allow delete: if isAdmin(h) || (isMember(h) && resource.data.fromUid == request.auth.uid);
+      }
+
       match /photoSubmissions/{id} {
         allow create: if hasRole(h, ['admin', 'cook']) && request.resource.data.data.size() < 600000;
         allow read, delete: if isAdmin(h);
