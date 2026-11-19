@@ -236,3 +236,4 @@ audio.voice{display:block;width:100%;height:40px;margin-top:8px}
 .recbtn.on{background:#E5484D;color:#fff;animation:recp 1.2s ease-in-out infinite}
 @keyframes recp{50%{opacity:.75}}
 .card.adm{border-inline-start:4px solid var(--acc)}
+.pushcard{display:flex;align-items:center;gap:10px;margin-top:12px;border:1.5px solid var(--tint)}

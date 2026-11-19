@@ -7,3 +7,5 @@ export const firebaseConfig = {
   messagingSenderId: "478268606667",
   appId: "1:478268606667:web:99956401bdb2b5b365f34e"
 };
+// Web Push public key (VAPID) — public, safe to ship
+export const vapidKey = "BN8ZR8xmwgZ9_n29r3QYygvGffnPgR866kYv1yIpJzdfAQkBWEHnwhiLZstA12hDcmClRuR2RvhUzuM8rZrHcbU";

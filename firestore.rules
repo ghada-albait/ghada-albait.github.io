@@ -64,6 +64,11 @@ service cloud.firestore {
         allow update, delete: if isAdmin(h);
       }
 
+      // Push tokens: each device writes only its own; the GitHub Action reads them with the service account
+      match /tokens/{uid} {
+        allow read, write: if isMember(h) && uid == request.auth.uid;
+      }
+
       match /messages/{id} {
         allow read: if isAdmin(h) || (isMember(h) && (resource.data.fromUid == request.auth.uid || resource.data.get('to', '') == role(h)));
         allow create: if isMember(h) && request.resource.data.fromUid == request.auth.uid

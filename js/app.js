@@ -2,10 +2,11 @@
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
 import { getAuth, signInAnonymously, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
 import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager, doc, getDoc, setDoc, updateDoc, deleteDoc, collection, addDoc, onSnapshot, query, where, orderBy, limit, writeBatch } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
-import { firebaseConfig } from './firebase-config.js?v=15';
-import { I18N, QUICK_NOTES } from './i18n.js?v=15';
-import { DISHES, ITEMS } from './seed.js?v=15';
-import { HELP } from './help.js?v=15';
+import { getMessaging, getToken, onMessage, isSupported as fcmSupported } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-messaging.js';
+import { firebaseConfig, vapidKey } from './firebase-config.js?v=16';
+import { I18N, QUICK_NOTES } from './i18n.js?v=16';
+import { DISHES, ITEMS } from './seed.js?v=16';
+import { HELP } from './help.js?v=16';
 
 const fbApp = initializeApp(firebaseConfig);
 const auth = getAuth(fbApp);
@@ -151,7 +152,7 @@ function shell() {
     <div class="brand">${S.depth > 0 ? `<button class="ibtn backbtn" data-act="goBack" aria-label="${esc(t('back'))}">${UI.back}</button>` : `<div class="logo">${ICON}</div>`}<div class="bt"><div class="ttl">${esc((S.house && S.house.name) || t('title'))}</div><div class="sub">${esc(t('r_' + r))} · ${esc(wdName(today()))} ${esc(fmt(today(), { day: 'numeric', month: 'short' }))}</div></div></div>
     <div class="actions">${acts}</div>
   </div>${S.offline ? `<div class="banner">${esc(t('offline'))}</div>` : ''}</header>
-  <main class="wrap">${body}</main>${nav}`;
+  <main class="wrap">${pushCard()}${body}</main>${nav}`;
 }
 
 /* ---------------- dish display ---------------- */
@@ -206,6 +207,37 @@ function weekList(start, n, admin) {
   return `<div class="card flat" style="padding:2px 14px">${h}</div>`;
 }
 
+
+/* --- push notifications --- */
+function pushCard() { try { if (ls('pushCardOff') || !S.house) return ''; const st = pushState(); if (st === 'default' || (st === 'granted' && !ls('pushTok_' + S.hid)) || (st === 'ios')) return `<div class="card flat pushcard"><div class="grow"><b>🔔 ${esc(t('notifOn'))}</b><div class="meta">${esc(st === 'ios' ? t('notifIos') : t('notifHint'))}</div></div>${st !== 'ios' ? `<button class="sm" data-act="notifEnable">${esc(t('notifOn'))}</button>` : ''}<button class="icon" data-act="pushCardOff" aria-label="close">✕</button></div>`; } catch (e) { } return ''; }
+const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+const standalone = () => (window.matchMedia && matchMedia('(display-mode: standalone)').matches) || navigator.standalone === true;
+const pushState = () => !('Notification' in window) || !('serviceWorker' in navigator) ? (isIOS && !standalone() ? 'ios' : 'na') : Notification.permission;
+function notifBlock() {
+  const st = pushState();
+  if (st === 'granted' && ls('pushTok_' + S.hid)) return `<div class="note" style="margin:6px 0 0">✓ ${esc(t('notifIsOn'))}</div>`;
+  if (st === 'ios') return `<p class="small mute" style="margin:6px 2px 0">📲 ${esc(t('notifIos'))}</p>`;
+  if (st === 'na') return `<p class="small mute" style="margin:6px 2px 0">${esc(t('notifNA'))}</p>`;
+  if (st === 'denied') return `<p class="small mute" style="margin:6px 2px 0">${esc(t('notifBlocked'))}</p>`;
+  return `<button class="block" data-act="notifEnable">🔔 ${esc(t('notifOn'))}</button><p class="small mute" style="margin:6px 2px 0">${esc(t('notifHint'))}</p>`;
+}
+let fcm = null;
+async function enablePush(ask) {
+  try {
+    if (!S.uid || !S.hid || !S.role) return;
+    if (!(await fcmSupported())) { if (ask) toast(isIOS && !standalone() ? t('notifIos') : t('notifNA')); return; }
+    if (Notification.permission === 'default' && ask) { const p = await Notification.requestPermission(); if (p !== 'granted') { if (ask) toast(t('notifBlocked')); return; } }
+    if (Notification.permission !== 'granted') return;
+    const reg = await navigator.serviceWorker.ready;
+    fcm = fcm || getMessaging(fbApp);
+    const token = await getToken(fcm, { vapidKey, serviceWorkerRegistration: reg });
+    if (!token) return;
+    const key = 'pushTok_' + S.hid, sig = token + '|' + S.role + '|' + L();
+    if (ls(key) !== sig || ask) await setDoc(H('tokens', S.uid), { token, role: S.role, lang: L(), uid: S.uid, at: Date.now(), ua: navigator.userAgent.slice(0, 120) });
+    ls(key, sig); if (ask) toast(t('notifTest'));
+    if (!enablePush._on) { enablePush._on = true; onMessage(fcm, p => { const d = Object.assign({}, p.notification || {}, p.data || {}); toast((d.title || '') + (d.body ? ' — ' + d.body : '')); }); }
+  } catch (e) { console.warn('push', e); if (ask) toast(errMsg(e)); }
+}
 
 /* --- voice messages --- */
 let expDone = false;
@@ -462,7 +494,7 @@ function renderModal() {
   if (!M) return; $sheet.setAttribute('dir', LANGS[L()].dir);
   let h = '<div class="handle"></div>';
   if (M.type === 'lang') h += `<h3>${esc(t('language'))}</h3>${langChips(S.lang)}`;
-  else if (M.type === 'me') h += `<h3>${esc(t('r_' + S.role))}</h3><p class="mute">${esc((S.house && S.house.name) || '')} · <span dir="ltr">${esc(S.hid)}</span></p>${S.role !== 'admin' ? `<div class="field"><span class="flabel">${esc(t('language'))}</span>${langChips(S.lang || 'ar')}</div>` : ''}<div class="field"><span class="flabel">${esc(t('theme'))}</span><div class="seg" style="grid-template-columns:repeat(3,1fr);margin-top:6px">${['auto', 'light', 'dark'].map(v => `<button class="${(ls('theme') || 'auto') === v ? 'on' : ''}" data-act="setTheme" data-v="${v}">${esc(t('th_' + v))}</button>`).join('')}</div></div><div class="field"><span class="flabel">${esc(t('bioLock'))}</span><button class="${ls('bioId') ? 'soft' : 'ghost'} block" data-act="bioToggle">${ls('bioId') ? '🔒 ' + esc(t('bioIsOn')) : '🔓 ' + esc(t('bioTurnOn'))}</button><p class="small mute" style="margin:6px 2px 0">${esc(t('bioHint'))}</p></div><button class="ghost block" data-act="logout">${esc(confirmKey === 'logout' ? t('logoutAsk') : t('logout'))}</button>`;
+  else if (M.type === 'me') h += `<h3>${esc(t('r_' + S.role))}</h3><p class="mute">${esc((S.house && S.house.name) || '')} · <span dir="ltr">${esc(S.hid)}</span></p>${S.role !== 'admin' ? `<div class="field"><span class="flabel">${esc(t('language'))}</span>${langChips(S.lang || 'ar')}</div>` : ''}<div class="field"><span class="flabel">🔔 ${esc(t('notifOn'))}</span>${notifBlock()}</div><div class="field"><span class="flabel">${esc(t('theme'))}</span><div class="seg" style="grid-template-columns:repeat(3,1fr);margin-top:6px">${['auto', 'light', 'dark'].map(v => `<button class="${(ls('theme') || 'auto') === v ? 'on' : ''}" data-act="setTheme" data-v="${v}">${esc(t('th_' + v))}</button>`).join('')}</div></div><div class="field"><span class="flabel">${esc(t('bioLock'))}</span><button class="${ls('bioId') ? 'soft' : 'ghost'} block" data-act="bioToggle">${ls('bioId') ? '🔒 ' + esc(t('bioIsOn')) : '🔓 ' + esc(t('bioTurnOn'))}</button><p class="small mute" style="margin:6px 2px 0">${esc(t('bioHint'))}</p></div><button class="ghost block" data-act="logout">${esc(confirmKey === 'logout' ? t('logoutAsk') : t('logout'))}</button>`;
   else if (M.type === 'short') h += modalShort();
   else if (M.type === 'wa') h += modalWa();
   else if (M.type === 'recipe') { const d = S.dishes[M.id]; if (d) h += `<h3>📖 ${esc(split(nm(d))[0])}</h3><div class="note" dir="rtl" style="white-space:pre-wrap;font-family:'IBM Plex Sans Arabic',sans-serif">${esc(d.recipe || '')}</div>${L() !== 'ar' ? `<a class="block" style="display:block;text-align:center;margin-top:10px" href="${trLink(d.recipe || '', 'ar', LANGS[L()].gt)}" target="_blank" rel="noopener">🌐 ${esc(t('translate'))} ›</a>` : ''}`; }
@@ -590,6 +622,8 @@ const ACT = {
   setLang(v) { S.lang = v; ls('lang', v); if (S.view === 'app' && S.uid && S.hid) updateDoc(H('members', S.uid), { lang: v }).catch(() => {}); closeModal(); render(); },
   openLang() { openModal({ type: 'lang' }); },
   openHelp() { openModal({ type: 'help' }); },
+  pushCardOff() { ls('pushCardOff', '1'); render(); },
+  async notifEnable() { await enablePush(true); if (M) renderModal(); render(); },
   openWa(v, id) { const prev = M && M.type === 'dish' ? M : null; openModal({ type: 'wa', kind: v || 'today', lang: ls('waLang') || 'ar', dishId: id || null, extra: '', back: prev }); },
   waKind(v) { M.kind = v; renderModal(); },
   waLang(v) { M.lang = v; ls('waLang', v); renderModal(); },
@@ -816,7 +850,7 @@ function start(hid) {
     if (!snap.exists()) { stop(); ls('hid', null); S.view = 'login'; S.role = null; return; }
     const m = snap.data(); const changed = S.role !== m.role; S.role = m.role;
     if (!S.lang) S.lang = m.lang || (m.role === 'cook' || m.role === 'driver' ? 'en' : 'ar');
-    if (changed) { S.tab = 'today'; attachRoleSubs(); if (!ls('helpSeen_' + m.role)) { ls('helpSeen_' + m.role, '1'); setTimeout(() => { if (!M) openModal({ type: 'help' }); }, 900); } }
+    if (changed) { S.tab = 'today'; attachRoleSubs(); setTimeout(() => enablePush(false), 2500); if (!ls('helpSeen_' + m.role)) { ls('helpSeen_' + m.role, '1'); setTimeout(() => { if (!M) openModal({ type: 'help' }); }, 900); } }
   }, () => { stop(); ls('hid', null); S.view = 'login'; });
 }
 let roleSubsOn = false;
@@ -855,7 +889,7 @@ onAuthStateChanged(auth, async u => {
 });
 if ('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js').then(r => { document.addEventListener('visibilitychange', () => { if (!document.hidden) r.update().catch(() => { }); }); }).catch(() => { });
 /* --- update check: compare baked version with version.json --- */
-const APP_V = '15';
+const APP_V = '16';
 let updShown = false;
 function checkUpdate() {
   if (updShown) return;

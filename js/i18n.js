@@ -1,6 +1,13 @@
 // Interface translations (ar, en, hi, bn, fil)
 export const I18N = {
 "ar": {
+"notifOn": "تفعيل التنبيهات",
+"notifIsOn": "التنبيهات مفعّلة على هذا الجهاز",
+"notifHint": "ليصلك تنبيه عند المنيو والنواقص والرسائل",
+"notifBlocked": "التنبيهات مرفوضة. فعّلها من إعدادات الجوال للتطبيق",
+"notifIos": "على الآيفون: أضف التطبيق للشاشة الرئيسية أولاً ثم افتحه من الأيقونة",
+"notifNA": "هذا المتصفح لا يدعم التنبيهات",
+"notifTest": "تم التفعيل ✓",
 "recVoice": "تسجيل رسالة صوتية",
 "recStop": "إيقاف",
 "recDel": "حذف التسجيل",
@@ -136,6 +143,13 @@ export const I18N = {
 "toTop": "للأعلى"
 },
 "en": {
+"notifOn": "Turn on notifications",
+"notifIsOn": "Notifications are on for this device",
+"notifHint": "Get alerts for the menu, shopping list and messages",
+"notifBlocked": "Notifications are blocked. Allow them in your phone settings",
+"notifIos": "On iPhone: add the app to the Home Screen first, then open it from the icon",
+"notifNA": "This browser does not support notifications",
+"notifTest": "Turned on ✓",
 "recVoice": "Record voice message",
 "recStop": "Stop",
 "recDel": "Delete recording",
@@ -271,6 +285,13 @@ export const I18N = {
 "toTop": "To top"
 },
 "hi": {
+"notifOn": "सूचनाएं चालू करें",
+"notifIsOn": "इस डिवाइस पर सूचनाएं चालू हैं",
+"notifHint": "मेनू, खरीदारी सूची और संदेशों की सूचना पाएं",
+"notifBlocked": "सूचनाएं बंद हैं। फ़ोन की सेटिंग में अनुमति दें",
+"notifIos": "iPhone पर: पहले ऐप को होम स्क्रीन पर जोड़ें, फिर आइकन से खोलें",
+"notifNA": "यह ब्राउज़र सूचनाएं सपोर्ट नहीं करता",
+"notifTest": "चालू हो गया ✓",
 "recVoice": "आवाज़ संदेश रिकॉर्ड करें",
 "recStop": "रोकें",
 "recDel": "रिकॉर्डिंग हटाएं",
@@ -406,6 +427,13 @@ export const I18N = {
 "toTop": "ऊपर"
 },
 "bn": {
+"notifOn": "নোটিফিকেশন চালু করুন",
+"notifIsOn": "এই ডিভাইসে নোটিফিকেশন চালু আছে",
+"notifHint": "মেনু, কেনাকাটার তালিকা ও বার্তার নোটিফিকেশন পান",
+"notifBlocked": "নোটিফিকেশন বন্ধ। ফোনের সেটিংসে অনুমতি দিন",
+"notifIos": "iPhone-এ: আগে অ্যাপটি হোম স্ক্রিনে যোগ করুন, তারপর আইকন থেকে খুলুন",
+"notifNA": "এই ব্রাউজার নোটিফিকেশন সমর্থন করে না",
+"notifTest": "চালু হয়েছে ✓",
 "recVoice": "ভয়েস মেসেজ রেকর্ড করুন",
 "recStop": "থামান",
 "recDel": "রেকর্ডিং মুছুন",
@@ -541,6 +569,13 @@ export const I18N = {
 "toTop": "উপরে"
 },
 "fil": {
+"notifOn": "I-on ang notifications",
+"notifIsOn": "Naka-on ang notifications sa device na ito",
+"notifHint": "Makatanggap ng alerto sa menu, listahan at mensahe",
+"notifBlocked": "Naka-block ang notifications. Payagan sa settings ng telepono",
+"notifIos": "Sa iPhone: idagdag muna ang app sa Home Screen, saka buksan mula sa icon",
+"notifNA": "Hindi suportado ng browser na ito ang notifications",
+"notifTest": "Naka-on na ✓",
 "recVoice": "Mag-record ng voice message",
 "recStop": "Itigil",
 "recDel": "Burahin ang recording",
@@ -676,6 +711,13 @@ export const I18N = {
 "toTop": "Itaas"
 },
 "te": {
+"notifOn": "నోటిఫికేషన్లు ఆన్ చేయండి",
+"notifIsOn": "ఈ ఫోన్‌లో నోటిఫికేషన్లు ఆన్‌లో ఉన్నాయి",
+"notifHint": "మెనూ, కొనుగోలు జాబితా, సందేశాల నోటిఫికేషన్లు పొందండి",
+"notifBlocked": "నోటిఫికేషన్లు బ్లాక్ అయ్యాయి. ఫోన్ సెట్టింగ్స్‌లో అనుమతించండి",
+"notifIos": "iPhone లో: ముందు యాప్‌ను హోమ్ స్క్రీన్‌కు జోడించి, ఐకాన్ నుండి తెరవండి",
+"notifNA": "ఈ బ్రౌజర్ నోటిఫికేషన్లకు మద్దతు ఇవ్వదు",
+"notifTest": "ఆన్ అయింది ✓",
 "recVoice": "వాయిస్ సందేశం రికార్డ్ చేయండి",
 "recStop": "ఆపండి",
 "recDel": "రికార్డింగ్ తొలగించండి",
