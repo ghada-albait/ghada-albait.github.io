@@ -45,6 +45,7 @@ let M = null, pending = false, confirmKey = null, unsubs = [], genDone = false, 
 const $app = document.getElementById('app'), $modal = document.getElementById('modal'), $sheet = document.getElementById('sheet');
 
 /* ---------------- helpers ---------------- */
+const nd = x => String(x || '').replace(/[\u0660-\u0669]/g, c => c.charCodeAt(0) - 0x660).replace(/[\u06F0-\u06F9]/g, c => c.charCodeAt(0) - 0x6F0).replace(/\s+/g, '');
 const ls = (k, v) => { try { if (v === undefined) return localStorage.getItem(k); if (v === null) localStorage.removeItem(k); else localStorage.setItem(k, v); } catch (e) { return null; } };
 const L = () => (S.role === 'admin' ? 'ar' : (S.lang || 'ar'));
 const t = k => (I18N[L()] && I18N[L()][k]) || I18N.en[k] || k;
@@ -498,7 +499,7 @@ const ACT = {
   goCreate() { S.view = 'create'; render(); },
   goLogin() { S.view = 'login'; render(); },
   async login(v, id, el) {
-    const code = (document.getElementById('code').value || '').trim().toUpperCase(), pin = (document.getElementById('pin').value || '').trim();
+    const code = (document.getElementById('code').value || '').trim().toUpperCase(), pin = nd(document.getElementById('pin').value);
     if (!code || !pin) { toast(t('loginBad')); return; }
     el.disabled = true; el.innerHTML = '<span class="spin"></span>';
     try { await deleteDoc(doc(db, 'households', code, 'members', S.uid)); } catch (e) { }
@@ -512,7 +513,7 @@ const ACT = {
   },
   async create(v, id, el) {
     const name = (document.getElementById('hname').value || '').trim(), code = (document.getElementById('hcode').value || '').trim().toUpperCase();
-    const p1 = document.getElementById('apin').value.trim(), p2 = document.getElementById('apin2').value.trim();
+    const p1 = nd(document.getElementById('apin').value), p2 = nd(document.getElementById('apin2').value);
     if (!name) return toast('اكتب اسم البيت'); if (!/^[A-Z0-9]{4,10}$/.test(code)) return toast('رمز البيت: 4 إلى 10 أحرف إنجليزية أو أرقام');
     if (!/^\d{6}$/.test(p1)) return toast('رمز الإدارة 6 أرقام'); if (p1 !== p2) return toast('الرمزان غير متطابقين');
     el.disabled = true; el.innerHTML = '<span class="spin"></span>';
@@ -649,7 +650,7 @@ const ACT = {
   msgToMenuDate(date) { const m = S._msg, d = m && S.dishes[m.dishId]; if (!d) return; ACT.editDay(date); const c = d.cat; M.items[c] = (M.items[c] || []).filter(x => x !== d.id); if (c === 'main') M.items.main = [d.id]; else M.items[c].push(d.id); M.fromMsg = m.id; renderModal(); },
   setPin(r) { openModal({ type: 'pin', role: r, pin: '', save: 'savePin', saveLabel: 'حفظ الرمز' }); },
   async savePin() {
-    const pin = (M.pin || '').trim(), r = M.role;
+    const pin = nd(M.pin), r = M.role;
     if (r === 'admin' ? !/^\d{6}$/.test(pin) : !/^\d{4,6}$/.test(pin)) return toast(r === 'admin' ? 'رمز الإدارة 6 أرقام' : 'الرمز 4 إلى 6 أرقام');
     M.busy = true; renderModal();
     try { await setDoc(H('secret', 'pins'), { [r]: await pinHash(S.hid, r, pin) }, { merge: true }); await updateDoc(H(), { ['pinSet.' + r]: true }); toast('تم حفظ الرمز ✓'); const role = r; closeModal(); if (role !== 'admin') ACT.invite(role, null, null, pin); }
