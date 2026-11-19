@@ -300,7 +300,7 @@ function timeAgo(ts) { try { return new Date(ts).toLocaleString(LANGS[L()].loc, 
 function msgDish(m, lang) { const d = m.dishId && S.dishes[m.dishId]; if (!d) return ''; return `<div class="row" style="padding:8px 0;border:0">${thumb(d)}<div class="grow"><div class="nm">${esc(split(nm(d, lang))[0])}</div><div class="meta">${m.date ? esc(wdName(m.date)) + ' ' + esc(fmt(m.date, { day: 'numeric', month: 'short' })) : esc(t('anyDay'))}</div></div></div>`; }
 function adminInbox() {
   const open = S.msgs.filter(m => m.status !== 'done').sort((a, b) => b.at - a.at), done = S.msgs.filter(m => m.status === 'done').sort((a, b) => b.at - a.at);
-  const card = m => `<div class="card flat"><div style="display:flex;justify-content:space-between;gap:8px;align-items:center"><span class="badge ${m.type === 'suggest' ? '' : 'gray'}">${m.type === 'suggest' ? '🍽️ اقتراح طبق' : '💬 رسالة'} · ${ROLE_AR[m.from] || ''}</span><span class="meta">${esc(timeAgo(m.at))}</span></div>${msgDish(m, 'ar')}${m.text ? `<p style="margin:8px 0 0">${esc(m.text)}${m.lang && m.lang !== 'ar' ? ` <a class="small" href="${trLink(m.text, 'auto', 'ar')}" target="_blank" rel="noopener">ترجم ›</a>` : ''}</p>` : ''}${m.reply ? `<div class="note" style="margin:10px 0 0"><b>ردّك</b>${esc(m.reply)}</div>` : ''}${m.status !== 'done' ? `<div class="btns" style="margin-top:10px">${m.type === 'suggest' && S.dishes[m.dishId] ? `<button class="sm" data-act="msgToMenu" data-id="${m.id}">أضف للمنيو</button>` : ''}<button class="sm ghost" data-act="msgReply" data-id="${m.id}">رد</button><button class="sm soft" data-act="msgDone" data-id="${m.id}">تم</button></div>` : `<div style="margin-top:8px"><button class="icon" data-act="msgDel" data-id="${m.id}">${confirmKey === 'm' + m.id ? 'تأكيد الحذف؟' : 'حذف'}</button></div>`}</div>`;
+  const card = m => `<div class="card flat"><div style="display:flex;justify-content:space-between;gap:8px;align-items:center"><span class="badge ${m.type === 'suggest' ? '' : 'gray'}">${m.type === 'suggest' ? '🍽️ اقتراح طبق' : '💬 رسالة'} · ${m.fromName ? `<b>${esc(m.fromName)}</b> (${ROLE_AR[m.from] || ''})` : (ROLE_AR[m.from] || '')}</span><span class="meta">${esc(timeAgo(m.at))}</span></div>${msgDish(m, 'ar')}${m.text ? `<p style="margin:8px 0 0">${esc(m.text)}${m.lang && m.lang !== 'ar' ? ` <a class="small" href="${trLink(m.text, 'auto', 'ar')}" target="_blank" rel="noopener">ترجم ›</a>` : ''}</p>` : ''}${m.reply ? `<div class="note" style="margin:10px 0 0"><b>ردّك</b>${esc(m.reply)}</div>` : ''}${m.status !== 'done' ? `<div class="btns" style="margin-top:10px">${m.type === 'suggest' && S.dishes[m.dishId] ? `<button class="sm" data-act="msgToMenu" data-id="${m.id}">أضف للمنيو</button>` : ''}<button class="sm ghost" data-act="msgReply" data-id="${m.id}">رد</button><button class="sm soft" data-act="msgDone" data-id="${m.id}">تم</button></div>` : `<div style="margin-top:8px"><button class="icon" data-act="msgDel" data-id="${m.id}">${confirmKey === 'm' + m.id ? 'تأكيد الحذف؟' : 'حذف'}</button></div>`}</div>`;
   let h = `<div class="sec"><h2>طلبات ورسائل جديدة</h2></div>` + (open.length ? open.map(card).join('') : `<div class="card empty">لا توجد طلبات جديدة</div>`);
   if (done.length) h += `<div class="card flat"><details><summary>المنتهية (${done.length})</summary>${done.slice(0, 30).map(card).join('')}</details></div>`;
   return h;
@@ -319,7 +319,8 @@ function modalCompose() {
     return `<h3>${esc(t('chooseDish'))}</h3><input data-filter data-m="q" placeholder="🔍 ${esc(t('search'))}" autocomplete="off"><div class="grid" id="grid">${ds.map(dishTile).join('')}</div>`;
   }
   M.save = 'sendMsg'; M.saveLabel = t('send');
-  let h = `<h3>${esc(M.kind === 'suggest' ? t('suggestDish') : t('msgAdmin'))}</h3>`;
+  if (M.name === undefined) M.name = ls('myName_' + S.hid) || '';
+  let h = `<h3>${esc(M.kind === 'suggest' ? t('suggestDish') : t('msgAdmin'))}</h3><div class="field"><label>${esc(t('yourName'))}</label><input data-m="name" value="${esc(M.name)}" autocomplete="name"></div>`;
   if (M.kind === 'suggest') {
     const d = S.dishes[M.dishId], days = [null]; for (let i = 0; i < 7; i++) days.push(addDays(today(), i));
     h += `<div class="card flat" style="margin-top:0;display:flex;align-items:center;gap:12px">${thumb(d)}<div class="grow"><div class="nm">${esc(split(nm(d))[0])}</div></div><button class="sm ghost" data-act="unpickDish">${esc(t('back'))}</button></div><div class="field"><span class="flabel">${esc(t('whichDay'))}</span><div class="chips">${days.map(x => `<button class="chip ${M.date === x ? 'on' : ''}" data-act="msgDay" data-v="${x || ''}">${esc(x ? wdName(x) : t('anyDay'))}</button>`).join('')}</div></div><div class="field"><label>${esc(t('optionalNote'))}</label><input data-m="text" value="${esc(M.text || '')}"></div>`;
@@ -632,9 +633,12 @@ const ACT = {
   unpickDish() { M.dishId = null; renderModal(); },
   msgDay(v) { M.date = v || null; renderModal(); },
   async sendMsg() {
-    const text = (M.text || '').trim(); if (M.kind === 'msg' && !text) return toast(t('writeMsg'));
+    const text = (M.text || '').trim(), name = (M.name || '').trim().slice(0, 40);
+    if (!name) return toast(t('yourName'));
+    if (M.kind === 'msg' && !text) return toast(t('writeMsg'));
+    ls('myName_' + S.hid, name);
     M.busy = true; renderModal();
-    try { await addDoc(HC('messages'), { type: M.kind, dishId: M.kind === 'suggest' ? M.dishId : null, date: M.kind === 'suggest' ? (M.date || null) : null, text, from: S.role, fromUid: S.uid, lang: L(), at: Date.now(), status: 'new' }); toast(t('msgSent')); openModal({ type: 'msgs' }); }
+    try { await addDoc(HC('messages'), { type: M.kind, dishId: M.kind === 'suggest' ? M.dishId : null, date: M.kind === 'suggest' ? (M.date || null) : null, text, from: S.role, fromName: name, fromUid: S.uid, lang: L(), at: Date.now(), status: 'new' }); toast(t('msgSent')); openModal({ type: 'msgs' }); }
     catch (e) { M.busy = false; renderModal(); toast(errMsg(e)); }
   },
   msgReply(v, id) { const m = S.msgs.find(x => x.id === id); openModal({ type: 'reply', id, reply: (m && m.reply) || '', save: 'saveReply', saveLabel: 'إرسال الرد' }); },
