@@ -2,10 +2,10 @@
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
 import { getAuth, signInAnonymously, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
 import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager, doc, getDoc, setDoc, updateDoc, deleteDoc, collection, addDoc, onSnapshot, query, where, orderBy, limit, writeBatch } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
-import { firebaseConfig } from './firebase-config.js?v=13';
-import { I18N, QUICK_NOTES } from './i18n.js?v=13';
-import { DISHES, ITEMS } from './seed.js?v=13';
-import { HELP } from './help.js?v=13';
+import { firebaseConfig } from './firebase-config.js?v=14';
+import { I18N, QUICK_NOTES } from './i18n.js?v=14';
+import { DISHES, ITEMS } from './seed.js?v=14';
+import { HELP } from './help.js?v=14';
 
 const fbApp = initializeApp(firebaseConfig);
 const auth = getAuth(fbApp);
@@ -30,6 +30,20 @@ const WD_AR = ['الأحد', 'الاثنين', 'الثلاثاء', 'الأربع
 const DEF = { counts: { main: 1, rice: 0, side: 1, salad: 1, soup: 0, dessert: 0 }, noRepeat: 10, horizon: 14, offDays: [] };
 const ROLE_AR = { admin: 'الإدارة', family: 'العائلة', cook: 'الطباخ', driver: 'السائق' };
 const ICON = `<svg viewBox="0 0 100 100" aria-hidden="true"><g fill="none" stroke="#F3B35E" stroke-width="5" stroke-linecap="round"><path d="M38 29c-5-5 5-8 0-15"/><path d="M50 27c-5-5 5-8 0-15"/><path d="M62 29c-5-5 5-8 0-15"/></g><g fill="#FFF4E8"><circle cx="50" cy="37" r="4"/><path d="M24 50a26 12 0 0 1 52 0z"/><rect x="18" y="50" width="64" height="6" rx="3"/><path d="M24 58h52v8a14 14 0 0 1-14 14H38a14 14 0 0 1-14-14z"/><rect x="11" y="60" width="11" height="5" rx="2.5"/><rect x="78" y="60" width="11" height="5" rx="2.5"/></g><rect x="24" y="64" width="52" height="3.5" fill="#F3B35E"/></svg>`;
+const IC = (d, extra) => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${d}</svg>`;
+const UI = {
+  share: IC('<path d="M12 3v12"/><path d="M7 8l5-5 5 5"/><path d="M5 13v6a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-6"/>'),
+  help: IC('<circle cx="12" cy="12" r="9"/><path d="M9.6 9.3a2.5 2.5 0 0 1 4.8.9c0 1.7-2.4 2.2-2.4 3.6"/><path d="M12 17h.01"/>'),
+  user: IC('<circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/>'),
+  chat: IC('<path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z"/>'),
+  globe: IC('<circle cx="12" cy="12" r="9"/><path d="M3 12h18"/><path d="M12 3a14 14 0 0 1 0 18a14 14 0 0 1 0-18"/>'),
+  menu: IC('<path d="M3 11h18"/><path d="M5 11v2a7 7 0 0 0 14 0v-2"/><path d="M9 4c-1 1 1 2 0 3M12 3c-1 1 1 2 0 3M15 4c-1 1 1 2 0 3"/>'),
+  inbox: IC('<path d="M4 13h4l2 3h4l2-3h4"/><path d="M5.5 5h13L21 13v5a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-5z"/>'),
+  cart: IC('<path d="M6 7h15l-2 9H8z"/><path d="M6 7L5 3H2"/><circle cx="9" cy="20" r="1"/><circle cx="18" cy="20" r="1"/>'),
+  chart: IC('<path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/>'),
+  more: IC('<rect x="3" y="3" width="7" height="7" rx="2"/><rect x="14" y="3" width="7" height="7" rx="2"/><rect x="3" y="14" width="7" height="7" rx="2"/><rect x="14" y="14" width="7" height="7" rx="2"/>'),
+  back: IC('<path d="M15 6l-6 6 6 6"/>')
+};
 const SV = {
   today: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 11h18"/><path d="M5 11v3a7 7 0 0 0 14 0v-3"/></svg>',
   list: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 7h15l-2 9H8z"/><path d="M6 7L5 3H2"/><circle cx="9" cy="20" r="1"/><circle cx="18" cy="20" r="1"/></svg>',
@@ -127,10 +141,15 @@ function shell() {
   else if (r === 'cook') body = cookView();
   else if (r === 'driver') body = driverView();
   else body = adminView();
-  const nav = r === 'cook' ? `<nav class="nav"><div class="in">${[['today', 'tabToday'], ['list', 'tabList'], ['week', 'tabWeek']].map(([k, lab]) => `<button class="${S.tab === k ? 'on' : ''}" data-act="tab" data-v="${k}">${SV[k]}${esc(t(lab))}${k === 'list' && S.shortages.length ? ` (${S.shortages.length})` : ''}</button>`).join('')}</div></nav>` : '';
+  const badge = n => n ? `<i class="bdg">${n > 99 ? '99+' : n}</i>` : '';
+  let nav = '';
+  if (r === 'cook') nav = `<nav class="nav"><div class="in" style="grid-template-columns:repeat(3,1fr)">${[['today', 'tabToday', SV.today, 0], ['list', 'tabList', SV.list, S.shortages.length], ['week', 'tabWeek', SV.week, 0]].map(([k, lab, ic, n]) => `<button class="${S.tab === k ? 'on' : ''}" data-act="tab" data-v="${k}"><span class="ico">${ic}${badge(n)}</span>${esc(t(lab))}</button>`).join('')}</div></nav>`;
+  else if (r === 'admin') { const a = S.adminTab, more = a === 'lib' || a === 'set'; nav = `<nav class="nav"><div class="in" style="grid-template-columns:repeat(5,1fr)">${[['menu', 'المنيو', UI.menu, 0, a === 'menu'], ['inbox', 'الطلبات', UI.inbox, newMsgs(), a === 'inbox'], ['short', 'النواقص', UI.cart, S.shortages.length, a === 'short'], ['report', 'التقارير', UI.chart, 0, a === 'report'], [more ? a : 'lib', 'المزيد', UI.more, S.queue.length, more]].map(([k, lab, ic, n, on]) => `<button class="${on ? 'on' : ''}" data-act="atab" data-v="${k}"><span class="ico">${ic}${badge(n)}</span>${lab}</button>`).join('')}</div></nav>`; }
+  const ib = (act, ic, label, n, extra) => `<button class="ibtn" data-act="${act}" aria-label="${esc(label)}" title="${esc(label)}"${extra || ''}>${ic}${badge(n)}</button>`;
+  const acts = (r === 'admin' ? ib('openWa', UI.share, 'واتساب') : ib('openMsgs', UI.chat, t('messages'), unreadReplies()) + `<button class="ibtn lang" data-act="openLang" aria-label="${esc(t('language'))}">${UI.globe}<b>${esc(l.toUpperCase().slice(0, 2))}</b></button>`) + ib('openHelp', UI.help, HELP[l].t.help) + `<button class="avatar" data-act="openMe" aria-label="${esc(t('r_' + r))}">${UI.user}</button>`;
   return `<header class="top"><div class="topin">
-    <div class="brand">${S.depth > 0 ? `<button class="backbtn" data-act="goBack" aria-label="${esc(t('back'))}">${LANGS[l].dir === 'rtl' ? '→' : '←'}</button>` : ''}<div class="logo">${ICON}</div><div style="min-width:0"><div class="ttl">${esc((S.house && S.house.name) || t('title'))}</div><div class="sub">${esc(wdName(today()))} · ${esc(fmt(today(), { day: 'numeric', month: 'long' }))}</div></div></div>
-    <div class="actions">${r === 'admin' ? `<button class="pill" data-act="openWa" aria-label="WhatsApp">📤</button>` : ''}${r !== 'admin' ? `<button class="pill" data-act="openMsgs" aria-label="${esc(t('messages'))}">💬${unreadReplies() ? ` <b style="color:var(--acc)">${unreadReplies()}</b>` : ''}</button><button class="pill" data-act="openLang">${esc(LANGS[l].label)}</button>` : ''}<button class="pill" data-act="openHelp" aria-label="${esc(HELP[l].t.help)}">?</button><button class="pill" data-act="openMe">${esc(t('r_' + r))}</button></div>
+    <div class="brand">${S.depth > 0 ? `<button class="ibtn backbtn" data-act="goBack" aria-label="${esc(t('back'))}">${UI.back}</button>` : `<div class="logo">${ICON}</div>`}<div class="bt"><div class="ttl">${esc((S.house && S.house.name) || t('title'))}</div><div class="sub">${esc(t('r_' + r))} · ${esc(wdName(today()))} ${esc(fmt(today(), { day: 'numeric', month: 'short' }))}</div></div></div>
+    <div class="actions">${acts}</div>
   </div>${S.offline ? `<div class="banner">${esc(t('offline'))}</div>` : ''}</header>
   <main class="wrap">${body}</main>${nav}`;
 }
@@ -291,11 +310,12 @@ function driverView() {
 /* --- admin --- */
 const TABS = [['menu', 'المنيو'], ['inbox', 'الطلبات'], ['short', 'النواقص'], ['report', 'التقارير'], ['lib', 'المكتبة'], ['set', 'الإعدادات']];
 function adminView() {
-  let h = `<div class="seg" style="grid-template-columns:repeat(3,1fr)">${TABS.map(([k, l]) => `<button class="${S.adminTab === k ? 'on' : ''}" data-act="atab" data-v="${k}">${l}${k === 'inbox' && newMsgs() ? ` (${newMsgs()})` : ''}${k === 'short' && S.shortages.length ? ` (${S.shortages.length})` : ''}${k === 'lib' && S.queue.length ? ` (${S.queue.length})` : ''}</button>`).join('')}</div>`;
   const a = S.adminTab;
+  let h = `<h1 class="page">${esc((TABS.find(x => x[0] === a) || TABS[0])[1])}</h1>`;
+  if (a === 'lib' || a === 'set') h = `<div class="seg" style="grid-template-columns:1fr 1fr">${[['lib', 'المكتبة' + (S.queue.length ? ` (${S.queue.length})` : '')], ['set', 'الإعدادات']].map(([k, l]) => `<button class="${a === k ? 'on' : ''}" data-act="atab" data-v="${k}">${l}</button>`).join('')}</div>`;
   if (a === 'menu') h += adminMenu();
   else if (a === 'inbox') h += adminInbox();
-  else if (a === 'short') h += `<div class="sec"><h2>النواقص المفتوحة</h2><div class="btns"><button class="sm soft" data-act="openWa" data-v="list">📤 واتساب</button><button class="sm" data-act="addShort">+ إضافة</button></div></div>` + shortList('admin') + `<button class="ghost block" data-act="extraBuy">+ تسجيل شراء</button>`;
+  else if (a === 'short') h += `<div class="sec"><h2>النواقص المفتوحة</h2><div class="btns"><button class="sm soft" data-act="openWa" data-v="list" style="display:inline-flex;gap:6px;align-items:center"><span style="width:18px;height:18px;display:inline-grid">${UI.share}</span>واتساب</button><button class="sm" data-act="addShort">+ إضافة</button></div></div>` + shortList('admin') + `<button class="ghost block" data-act="extraBuy">+ تسجيل شراء</button>`;
   else if (a === 'report') h += adminReport();
   else if (a === 'lib') h += adminLib();
   else h += adminSettings();
@@ -305,7 +325,7 @@ function adminMenu() {
   const st = settings(), td = today();
   const spend = S.purchases.filter(p => p.month === monthOf(td)).reduce((a, p) => a + (Number(p.price) || 0), 0), nm2 = newMsgs();
   const stats = `<div class="stats"><button class="scard ${S.shortages.length ? 'hot' : ''}" data-act="atab" data-v="short"><b>${S.shortages.length}</b><span>نواقص مطلوبة</span></button><button class="scard ${nm2 ? 'hot' : ''}" data-act="atab" data-v="inbox"><b>${nm2}</b><span>طلبات ورسائل جديدة</span></button><button class="scard" data-act="atab" data-v="report"><b dir="ltr">${money(spend)}</b><span>مصروف هذا الشهر (د.ك)</span></button><button class="scard ${S.queue.length ? 'hot' : ''}" data-act="goPhotos"><b>${S.queue.length}</b><span>صور بانتظار اعتمادك</span></button></div>`;
-  return stats + `<div class="sec"><h2>غداء اليوم <button class="sm soft" data-act="openWa" data-v="today" style="vertical-align:middle;margin-inline-start:6px">📤</button></h2>${S.menus[td] && !S.menus[td].off ? (S.menus[td].seen ? '<span class="badge ok">✓ استلم الطباخ</span>' : '<span class="badge gray">لم يستلم الطباخ بعد</span>') : ''}</div>` + heroMenu(td).replace(/<div><span class="badge ok">.*?<\/span><\/div>$/, '') + `<div class="sec"><h2>الأيام القادمة</h2>${viewToggle()}</div><div style="display:flex;justify-content:space-between;align-items:center;gap:8px"><p class="small mute" style="margin:0 2px">اضغط أي يوم لتعديله أو إضافة ملاحظة.</p><button class="sm soft" data-act="regen">${confirmKey === 'regen' ? 'اضغط للتأكيد' : '🔀 إعادة توليد'}</button></div>` + daysView(S.dayView === 'cal' ? td : addDays(td, 1), st.horizon - 1, true);
+  return stats + `<div class="sec"><h2>غداء اليوم <button class="ibtn" data-act="openWa" data-v="today" aria-label="واتساب" style="display:inline-grid;vertical-align:middle;width:34px;height:34px;min-height:34px;color:var(--acc)">${UI.share}</button></h2>${S.menus[td] && !S.menus[td].off ? (S.menus[td].seen ? '<span class="badge ok">✓ استلم الطباخ</span>' : '<span class="badge gray">لم يستلم الطباخ بعد</span>') : ''}</div>` + heroMenu(td).replace(/<div><span class="badge ok">.*?<\/span><\/div>$/, '') + `<div class="sec"><h2>الأيام القادمة</h2>${viewToggle()}</div><div style="display:flex;justify-content:space-between;align-items:center;gap:8px"><p class="small mute" style="margin:0 2px">اضغط أي يوم لتعديله أو إضافة ملاحظة.</p><button class="sm soft" data-act="regen">${confirmKey === 'regen' ? 'اضغط للتأكيد' : '🔀 إعادة توليد'}</button></div>` + daysView(S.dayView === 'cal' ? td : addDays(td, 1), st.horizon - 1, true);
 }
 function adminLib() {
   let h = `<div class="seg" style="grid-template-columns:repeat(3,1fr)">${[['dishes', 'الأطباق'], ['items', 'السلع'], ['photos', 'صور بانتظارك' + (S.queue.length ? ` (${S.queue.length})` : '')]].map(([k, l]) => `<button class="${S.libTab === k ? 'on' : ''}" data-act="ltab" data-v="${k}">${l}</button>`).join('')}</div>`;
@@ -343,8 +363,8 @@ function timeAgo(ts) { try { return new Date(ts).toLocaleString(LANGS[L()].loc, 
 function msgDish(m, lang) { const d = m.dishId && S.dishes[m.dishId]; if (!d) return ''; return `<div class="row" style="padding:8px 0;border:0">${thumb(d)}<div class="grow"><div class="nm">${esc(split(nm(d, lang))[0])}</div><div class="meta">${m.date ? esc(wdName(m.date)) + ' ' + esc(fmt(m.date, { day: 'numeric', month: 'short' })) : esc(t('anyDay'))}</div></div></div>`; }
 function adminInbox() {
   const open = S.msgs.filter(m => m.status !== 'done').sort((a, b) => b.at - a.at), done = S.msgs.filter(m => m.status === 'done').sort((a, b) => b.at - a.at);
-  const card = m => `<div class="card flat${m.status === 'done' ? ' sw' : ''}" data-sw="msgDel" data-id="${m.id}"><div style="display:flex;justify-content:space-between;gap:8px;align-items:center"><span class="badge ${m.type === 'suggest' ? '' : 'gray'}">${m.type === 'suggest' ? '🍽️ اقتراح طبق' : '💬 رسالة'} · ${m.fromName ? `<b>${esc(m.fromName)}</b> (${ROLE_AR[m.from] || ''})` : (ROLE_AR[m.from] || '')}</span><span class="meta">${esc(timeAgo(m.at))}</span></div>${msgDish(m, 'ar')}${m.text ? `<p style="margin:8px 0 0">${esc(m.text)}${m.lang && m.lang !== 'ar' ? ` <a class="small" href="${trLink(m.text, 'auto', 'ar')}" target="_blank" rel="noopener">ترجم ›</a>` : ''}</p>` : ''}${m.reply ? `<div class="note" style="margin:10px 0 0"><b>ردّك</b>${esc(m.reply)}</div>` : ''}${m.status !== 'done' ? `<div class="btns" style="margin-top:10px">${m.type === 'suggest' && S.dishes[m.dishId] ? `<button class="sm" data-act="msgToMenu" data-id="${m.id}">أضف للمنيو</button>` : ''}<button class="sm ghost" data-act="msgReply" data-id="${m.id}">رد</button><button class="sm soft" data-act="msgDone" data-id="${m.id}">تم</button></div>` : `<div style="margin-top:8px;display:flex;justify-content:flex-end">${delBtn('m' + m.id, 'msgDel', m.id)}</div>`}</div>`;
-  let h = `<div class="sec"><h2>طلبات ورسائل جديدة</h2></div>` + (open.length ? open.map(card).join('') : `<div class="card empty">لا توجد طلبات جديدة</div>`);
+  const card = m => `<div class="card flat${m.status === 'done' ? ' sw' : ''}" data-sw="msgDel" data-id="${m.id}"><div class="mhead"><span class="mav ${m.from}">${esc(((m.fromName || ROLE_AR[m.from] || '?').trim()[0] || '?').toUpperCase())}</span><div class="grow" style="min-width:0"><div class="mname">${esc(m.fromName || ROLE_AR[m.from] || '')}</div><div class="meta">${m.fromName ? esc(ROLE_AR[m.from] || '') + ' · ' : ''}${m.type === 'suggest' ? '🍽️ اقتراح طبق' : '💬 رسالة'}</div></div><span class="meta" style="flex:none">${esc(timeAgo(m.at))}</span></div>${msgDish(m, 'ar')}${m.text ? `<p style="margin:8px 0 0">${esc(m.text)}${m.lang && m.lang !== 'ar' ? ` <a class="small" href="${trLink(m.text, 'auto', 'ar')}" target="_blank" rel="noopener">ترجم ›</a>` : ''}</p>` : ''}${m.reply ? `<div class="note" style="margin:10px 0 0"><b>ردّك</b>${esc(m.reply)}</div>` : ''}${m.status !== 'done' ? `<div class="btns" style="margin-top:10px">${m.type === 'suggest' && S.dishes[m.dishId] ? `<button class="sm" data-act="msgToMenu" data-id="${m.id}">أضف للمنيو</button>` : ''}<button class="sm ghost" data-act="msgReply" data-id="${m.id}">رد</button><button class="sm soft" data-act="msgDone" data-id="${m.id}">تم</button></div>` : `<div style="margin-top:8px;display:flex;justify-content:flex-end">${delBtn('m' + m.id, 'msgDel', m.id)}</div>`}</div>`;
+  let h = `<div class="sec"><h2>الجديدة${open.length ? ` <span class="badge">${open.length}</span>` : ''}</h2></div>` + (open.length ? open.map(card).join('') : `<div class="card empty">لا توجد طلبات جديدة</div>`);
   if (done.length) h += `<div class="card flat"><details${dOpen('done')}><summary>المنتهية (${done.length})</summary>${done.slice(0, 30).map(card).join('')}</details></div>`;
   return h;
 }
@@ -789,7 +809,7 @@ onAuthStateChanged(auth, async u => {
 });
 if ('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js').then(r => { document.addEventListener('visibilitychange', () => { if (!document.hidden) r.update().catch(() => { }); }); }).catch(() => { });
 /* --- update check: compare baked version with version.json --- */
-const APP_V = '13';
+const APP_V = '14';
 let updShown = false;
 function checkUpdate() {
   if (updShown) return;
