@@ -3,8 +3,8 @@
   --acc:#9C3B1B;--acc-ink:#FFFFFF;--tint:#F7E4DB;--saffron:#F3B35E;--note:#FFF1D6;--note-ink:#5C3409;
   --gray:#EFEBE6;--warn:#8E2F14;--warnbg:#FBE3DC;--ok:#2F6B4F;--okbg:#E4EEE8;
   --r:20px;--shadow:0 1px 0 var(--line),0 8px 24px rgba(31,26,23,.06);
-  --font:'IBM Plex Sans Arabic','Noto Sans Devanagari','Noto Sans Bengali',system-ui,-apple-system,sans-serif;
-  --head:'Readex Pro','IBM Plex Sans Arabic','Noto Sans Devanagari','Noto Sans Bengali',system-ui,sans-serif;
+  --font:'IBM Plex Sans Arabic','Noto Sans Devanagari','Noto Sans Bengali','Noto Sans Telugu',system-ui,-apple-system,sans-serif;
+  --head:'Readex Pro','IBM Plex Sans Arabic','Noto Sans Devanagari','Noto Sans Bengali','Noto Sans Telugu',system-ui,sans-serif;
 }
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--font);line-height:1.45;-webkit-text-size-adjust:100%}

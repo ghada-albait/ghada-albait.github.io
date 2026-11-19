@@ -7,6 +7,7 @@ export const DISHES = [
 "name_hi": "मचबूस लहम (मसाला चावल और मटन)",
 "name_bn": "মাচবুস লাহাম (মশলা ভাত ও মাংস)",
 "name_fil": "Machboos Laham (kanin na may pampalasa at karne)",
+"name_te": "మచ్‌బూస్ లహమ్ (మసాలా అన్నం & మటన్)",
 "cat": "main",
 "emoji": "🍖",
 "pair": null
@@ -18,6 +19,7 @@ export const DISHES = [
 "name_hi": "मचबूस दियाय (मसाला चावल और चिकन)",
 "name_bn": "মাচবুস দিয়াই (মশলা ভাত ও মুরগি)",
 "name_fil": "Machboos Dyay (kanin na may pampalasa at manok)",
+"name_te": "మచ్‌బూస్ దియాయ్ (మసాలా అన్నం & చికెన్)",
 "cat": "main",
 "emoji": "🍗",
 "pair": null
@@ -29,6 +31,7 @@ export const DISHES = [
 "name_hi": "बिरयानी लहम (मटन बिरयानी)",
 "name_bn": "বিরিয়ানি লাহাম (মাটন বিরিয়ানি)",
 "name_fil": "Biryani Laham (biryani na may karne)",
+"name_te": "బిర్యానీ లహమ్ (మటన్ బిర్యానీ)",
 "cat": "main",
 "emoji": "🍛",
 "pair": null,
@@ -46,6 +49,7 @@ export const DISHES = [
 "name_hi": "बिरयानी दियाय (चिकन बिरयानी)",
 "name_bn": "বিরিয়ানি দিয়াই (চিকেন বিরিয়ানি)",
 "name_fil": "Biryani Dyay (biryani na may manok)",
+"name_te": "బిర్యానీ దియాయ్ (చికెన్ బిర్యానీ)",
 "cat": "main",
 "emoji": "🍛",
 "pair": null,
@@ -63,6 +67,7 @@ export const DISHES = [
 "name_hi": "बिरयानी ख़ुदरा (वेज बिरयानी)",
 "name_bn": "বিরিয়ানি খুদরা (সবজি বিরিয়ানি)",
 "name_fil": "Biryani Khudra (biryani na may gulay)",
+"name_te": "బిర్యానీ ఖుద్రా (వెజ్ బిర్యానీ)",
 "cat": "main",
 "emoji": "🍛",
 "pair": null,
@@ -80,6 +85,7 @@ export const DISHES = [
 "name_hi": "बिरयानी रुब्यान (झींगा बिरयानी)",
 "name_bn": "বিরিয়ানি রুবিয়ান (চিংড়ি বিরিয়ানি)",
 "name_fil": "Biryani Rubyan (biryani na may hipon)",
+"name_te": "బిర్యానీ రుబ్యాన్ (రొయ్యల బిర్యానీ)",
 "cat": "main",
 "emoji": "🦐",
 "pair": null,
@@ -97,6 +103,7 @@ export const DISHES = [
 "name_hi": "मकरोना बेशमेल (ओवन वाला पास्ता)",
 "name_bn": "মাকারোনা বেশামেল (ওভেনে পাস্তা)",
 "name_fil": "Macarona Bechamel (pasta na inihurno)",
+"name_te": "మకరోనా బెషమెల్ (ఓవెన్‌లో పాస్తా)",
 "cat": "main",
 "emoji": "🍝",
 "pair": null
@@ -108,6 +115,7 @@ export const DISHES = [
 "name_hi": "कूसा बेशमेल (ओवन वाली ज़ुकिनी)",
 "name_bn": "কুসা বেশামেল (ওভেনে জুকিনি)",
 "name_fil": "Kousa Bechamel (zucchini na inihurno)",
+"name_te": "కూసా బెషమెల్ (ఓవెన్‌లో జుకినీ)",
 "cat": "main",
 "emoji": "🥒",
 "pair": null
@@ -119,6 +127,7 @@ export const DISHES = [
 "name_hi": "सीनिया बतात लहम (आलू-मटन ट्रे, ओवन)",
 "name_bn": "সিনিয়া বাতাত লাহাম (আলু-মাংসের ট্রে, ওভেন)",
 "name_fil": "Saniyat Batat w Laham (patatas at karne sa tray)",
+"name_te": "సీనియా బతాత్ లహమ్ (బంగాళాదుంప & మటన్ ట్రే)",
 "cat": "main",
 "emoji": "🥔",
 "pair": "rice"
@@ -130,6 +139,7 @@ export const DISHES = [
 "name_hi": "सीनिया दियाय (पूरा चिकन और सब्ज़ी, ट्रे)",
 "name_bn": "সিনিয়া দিয়াই (আস্ত মুরগি ও সবজি, ট্রে)",
 "name_fil": "Saniyat Dyay (buong manok at gulay sa tray)",
+"name_te": "సీనియా దియాయ్ (మొత్తం చికెన్ & కూరగాయల ట్రే)",
 "cat": "main",
 "emoji": "🍗",
 "pair": "rice",
@@ -147,6 +157,7 @@ export const DISHES = [
 "name_hi": "सीनिया अजनिहा (चिकन विंग्स ट्रे)",
 "name_bn": "সিনিয়া আজনিহা (চিকেন উইংস ট্রে)",
 "name_fil": "Saniyat Ajniha (pakpak ng manok sa tray)",
+"name_te": "సీనియా అజ్నిహా (చికెన్ వింగ్స్ ట్రే)",
 "cat": "main",
 "emoji": "🍗",
 "pair": null,
@@ -164,6 +175,7 @@ export const DISHES = [
 "name_hi": "मसक़्क़ा क़ीमा (बैंगन और क़ीमा, ट्रे)",
 "name_bn": "মাসাক্কা কিমা (বেগুন ও কিমা, ট্রে)",
 "name_fil": "Mesaqa'a (talong at giniling na karne sa tray)",
+"name_te": "మసక్కా ఖీమా (వంకాయ & ఖీమా ట్రే)",
 "cat": "main",
 "emoji": "🍆",
 "pair": "rice"
@@ -175,6 +187,7 @@ export const DISHES = [
 "name_hi": "मसक़्क़ा बिना क़ीमा (बैंगन ट्रे)",
 "name_bn": "মাসাক্কা কিমা ছাড়া (বেগুনের ট্রে)",
 "name_fil": "Mesaqa'a (talong sa tray, walang karne)",
+"name_te": "మసక్కా ఖీమా లేకుండా (వంకాయ ట్రే)",
 "cat": "main",
 "emoji": "🍆",
 "pair": "rice"
@@ -186,6 +199,7 @@ export const DISHES = [
 "name_hi": "मुतब्बक़ ज़ुबैदी (मछली और चावल)",
 "name_bn": "মুতাব্বাক জুবাইদি (মাছ ও ভাত)",
 "name_fil": "Mutabbaq Zubaidi (isda sa ibabaw ng kanin)",
+"name_te": "ముతబ్బక్ జుబైదీ (చేప & అన్నం)",
 "cat": "main",
 "emoji": "🐟",
 "pair": null
@@ -197,6 +211,7 @@ export const DISHES = [
 "name_hi": "समच मक़ली (तली हुई मछली)",
 "name_bn": "সামাচ মাকলি (ভাজা মাছ)",
 "name_fil": "Samach Maqli (pritong isda)",
+"name_te": "సమచ్ మక్లీ (వేయించిన చేప)",
 "cat": "main",
 "emoji": "🐠",
 "pair": "rice"
@@ -208,6 +223,7 @@ export const DISHES = [
 "name_hi": "मरक़त समच (मछली का सालन)",
 "name_bn": "মারাকাত সামাচ (মাছের ঝোল)",
 "name_fil": "Maraqat Samach (isda na may sarsa)",
+"name_te": "మరకత్ సమచ్ (చేపల పులుసు)",
 "cat": "main",
 "emoji": "🐟",
 "pair": "rice"
@@ -219,6 +235,7 @@ export const DISHES = [
 "name_hi": "मरक़त अदस (दाल)",
 "name_bn": "মারাকাত আদাস (ডাল)",
 "name_fil": "Maraqat Adas (lentil na may sarsa)",
+"name_te": "మరకత్ అదస్ (పప్పు)",
 "cat": "main",
 "emoji": "🫘",
 "pair": "rice"
@@ -230,6 +247,7 @@ export const DISHES = [
 "name_hi": "मरक़त लहम (मटन का सालन)",
 "name_bn": "মারাকাত লাহাম (মাংসের ঝোল)",
 "name_fil": "Maraqat Laham (karne na may sarsa)",
+"name_te": "మరకత్ లహమ్ (మటన్ కూర)",
 "cat": "main",
 "emoji": "🍲",
 "pair": "rice"
@@ -241,6 +259,7 @@ export const DISHES = [
 "name_hi": "मरक़त दियाय (चिकन का सालन)",
 "name_bn": "মারাকাত দিয়াই (মুরগির ঝোল)",
 "name_fil": "Maraqat Dyay (manok na may sarsa)",
+"name_te": "మరకత్ దియాయ్ (చికెన్ కూర)",
 "cat": "main",
 "emoji": "🍲",
 "pair": "rice"
@@ -252,6 +271,7 @@ export const DISHES = [
 "name_hi": "मरक़त बतात (आलू का सालन)",
 "name_bn": "মারাকাত বাতাত (আলুর তরকারি)",
 "name_fil": "Maraqat Batat (patatas na may sarsa)",
+"name_te": "మరకత్ బతాత్ (బంగాళాదుంప కూర)",
 "cat": "main",
 "emoji": "🥔",
 "pair": "rice"
@@ -263,6 +283,7 @@ export const DISHES = [
 "name_hi": "ऐश शबंत दियाय (सोआ वाले चावल और चिकन)",
 "name_bn": "আইশ শাবান্ত দিয়াই (শুলফা ভাত ও মুরগি)",
 "name_fil": "Aish Shabant w Dyay (kanin na may dill at manok)",
+"name_te": "ఐష్ షబంత్ దియాయ్ (సోయా ఆకు అన్నం & చికెన్)",
 "cat": "main",
 "emoji": "🍗",
 "pair": null
@@ -274,6 +295,7 @@ export const DISHES = [
 "name_hi": "ऐश क़ूज़ी दियाय (क़ीमा वाले चावल और चिकन)",
 "name_bn": "আইশ কুজি দিয়াই (কিমার ভাত ও মুরগি)",
 "name_fil": "Aish Qoozi w Dyay (kanin na may giniling at manok)",
+"name_te": "ఐష్ ఖూజీ దియాయ్ (ఖీమా అన్నం & చికెన్)",
 "cat": "main",
 "emoji": "🍗",
 "pair": null
@@ -285,6 +307,7 @@ export const DISHES = [
 "name_hi": "बोफ़्तेक लहम (मटन कटलेट)",
 "name_bn": "বোফতেক লাহাম (মাংসের কাটলেট)",
 "name_fil": "Boftek Laham (breaded na karne)",
+"name_te": "బోఫ్తెక్ లహమ్ (మటన్ కట్లెట్)",
 "cat": "main",
 "emoji": "🥩",
 "pair": null,
@@ -302,6 +325,7 @@ export const DISHES = [
 "name_hi": "बोफ़्तेक दियाय (चिकन कटलेट)",
 "name_bn": "বোফতেক দিয়াই (চিকেন কাটলেট)",
 "name_fil": "Boftek Dyay (breaded na manok)",
+"name_te": "బోఫ్తెక్ దియాయ్ (చికెన్ కట్లెట్)",
 "cat": "main",
 "emoji": "🍗",
 "pair": null,
@@ -319,6 +343,7 @@ export const DISHES = [
 "name_hi": "नूडल्स ख़ुदरा (वेज नूडल्स)",
 "name_bn": "নুডলস খুদরা (সবজি নুডলস)",
 "name_fil": "Noodles Khudra (noodles na may gulay)",
+"name_te": "నూడుల్స్ ఖుద్రా (వెజ్ నూడుల్స్)",
 "cat": "main",
 "emoji": "🍜",
 "pair": null
@@ -330,6 +355,7 @@ export const DISHES = [
 "name_hi": "नूडल्स दियाय (चिकन नूडल्स)",
 "name_bn": "নুডলস দিয়াই (চিকেন নুডলস)",
 "name_fil": "Noodles Dyay (noodles na may manok)",
+"name_te": "నూడుల్స్ దియాయ్ (చికెన్ నూడుల్స్)",
 "cat": "main",
 "emoji": "🍜",
 "pair": null,
@@ -347,6 +373,7 @@ export const DISHES = [
 "name_hi": "हरीस लहम (गेहूं और मटन)",
 "name_bn": "হারিস লাহাম (গম ও মাংস)",
 "name_fil": "Harees Laham (trigo at karne)",
+"name_te": "హరీస్ లహమ్ (గోధుమలు & మటన్)",
 "cat": "main",
 "emoji": "🥣",
 "pair": null
@@ -358,6 +385,7 @@ export const DISHES = [
 "name_hi": "जरीश लहम (दलिया और मटन)",
 "name_bn": "জারিশ লাহাম (ভাঙা গম ও মাংস)",
 "name_fil": "Jareesh Laham (dinurog na trigo at karne)",
+"name_te": "జరీష్ లహమ్ (గోధుమ రవ్వ & మటన్)",
 "cat": "main",
 "emoji": "🥣",
 "pair": null
@@ -369,6 +397,7 @@ export const DISHES = [
 "name_hi": "जरीश दियाय (दलिया और चिकन)",
 "name_bn": "জারিশ দিয়াই (ভাঙা গম ও মুরগি)",
 "name_fil": "Jareesh Dyay (dinurog na trigo at manok)",
+"name_te": "జరీష్ దియాయ్ (గోధుమ రవ్వ & చికెన్)",
 "cat": "main",
 "emoji": "🥣",
 "pair": null
@@ -380,6 +409,7 @@ export const DISHES = [
 "name_hi": "ख़थरा ज़ुबैदी (गाढ़ी मछली करी)",
 "name_bn": "খাসরা জুবাইদি (ঘন মাছের ঝোল)",
 "name_fil": "Khathrat Zubaidi (malapot na sarsa ng isda)",
+"name_te": "ఖత్రా జుబైదీ (చిక్కటి చేపల కూర)",
 "cat": "main",
 "emoji": "🐟",
 "pair": "rice"
@@ -391,6 +421,7 @@ export const DISHES = [
 "name_hi": "ख़थरा क्रीम (गाढ़ी मछली करी)",
 "name_bn": "খাসরা ক্রিম (ঘন মাছের ঝোল)",
 "name_fil": "Khathrat Kreem (malapot na sarsa ng isda)",
+"name_te": "ఖత్రా క్రీమ్ (చిక్కటి చేపల కూర)",
 "cat": "main",
 "emoji": "🐟",
 "pair": "rice"
@@ -402,6 +433,7 @@ export const DISHES = [
 "name_hi": "समच मैद मशवी (ग्रिल्ड मछली)",
 "name_bn": "সামাচ মাইদ মাশওয়ি (গ্রিল করা মাছ)",
 "name_fil": "Samach Maid Mashwi (inihaw na isda)",
+"name_te": "సమచ్ మైద్ మశ్వీ (గ్రిల్డ్ చేప)",
 "cat": "main",
 "emoji": "🐟",
 "pair": "rice"
@@ -413,6 +445,7 @@ export const DISHES = [
 "name_hi": "ममौश (मूंग वाले चावल)",
 "name_bn": "মুমাওয়াশ (মুগ ডালের ভাত)",
 "name_fil": "Mumawash (kanin na may munggo)",
+"name_te": "మమౌష్ (పెసలతో అన్నం)",
 "cat": "main",
 "emoji": "🍚",
 "pair": null
@@ -424,6 +457,7 @@ export const DISHES = [
 "name_hi": "ममौश लहम (मूंग वाले चावल और मटन)",
 "name_bn": "মুমাওয়াশ লাহাম (মুগ ডালের ভাত ও মাংস)",
 "name_fil": "Mumawash Laham (kanin na may munggo at karne)",
+"name_te": "మమౌష్ లహమ్ (పెసల అన్నం & మటన్)",
 "cat": "main",
 "emoji": "🍚",
 "pair": null
@@ -435,6 +469,7 @@ export const DISHES = [
 "name_hi": "मुअद्दस (दाल वाले चावल)",
 "name_bn": "মুয়াদ্দাস (ডালের ভাত)",
 "name_fil": "Muaddas (kanin na may lentil)",
+"name_te": "ముఅద్దస్ (పప్పుతో అన్నం)",
 "cat": "main",
 "emoji": "🍚",
 "pair": null
@@ -446,6 +481,7 @@ export const DISHES = [
 "name_hi": "दियाय मशवी (ग्रिल्ड चिकन)",
 "name_bn": "দিয়াই মাশওয়ি (গ্রিল চিকেন)",
 "name_fil": "Dyay Mashwi (inihaw na manok)",
+"name_te": "దియాయ్ మశ్వీ (గ్రిల్డ్ చికెన్)",
 "cat": "main",
 "emoji": "🍗",
 "pair": "rice",
@@ -463,6 +499,7 @@ export const DISHES = [
 "name_hi": "मुलूख़िया (हरे पत्तों का सालन)",
 "name_bn": "মুলুখিয়া (পাটশাকের ঝোল)",
 "name_fil": "Molokhia (sabaw ng saluyot)",
+"name_te": "ములూఖియా (ఆకుకూర కూర)",
 "cat": "main",
 "emoji": "🥬",
 "pair": "rice",
@@ -480,6 +517,7 @@ export const DISHES = [
 "name_hi": "हम्सा दियाय (प्याज़-टमाटर में भुना चिकन)",
 "name_bn": "হামসা দিয়াই (পেঁয়াজ-টমেটোতে ভুনা মুরগি)",
 "name_fil": "Hamsat Dyay (manok na may piniritong sibuyas at kamatis)",
+"name_te": "హమ్సా దియాయ్ (ఉల్లి-టమాటాలో వేయించిన చికెన్)",
 "cat": "main",
 "emoji": "🍗",
 "pair": "rice"
@@ -491,6 +529,7 @@ export const DISHES = [
 "name_hi": "मकरोना हमरा (रेड सॉस पास्ता)",
 "name_bn": "মাকারোনা হামরা (রেড সস পাস্তা)",
 "name_fil": "Macarona Hamra (pasta na may pulang sarsa)",
+"name_te": "మకరోనా హమ్రా (రెడ్ సాస్ పాస్తా)",
 "cat": "main",
 "emoji": "🍝",
 "pair": null,
@@ -508,6 +547,7 @@ export const DISHES = [
 "name_hi": "फ़ख़्ज़ मशवी (भुनी मटन टांग)",
 "name_bn": "ফাখয মাশওয়ি (রোস্ট খাসির রান)",
 "name_fil": "Fakhth Mashwi (inihaw na hita ng tupa)",
+"name_te": "ఫఖ్జ్ మశ్వీ (కాల్చిన మటన్ కాలు)",
 "cat": "main",
 "emoji": "🍖",
 "pair": "rice",
@@ -525,6 +565,7 @@ export const DISHES = [
 "name_hi": "अरायस (क़ीमा भरी रोटी)",
 "name_bn": "আরায়েস (কিমা ভরা রুটি)",
 "name_fil": "Arayes (tinapay na may palamang giniling)",
+"name_te": "అరాయిస్ (ఖీమా నింపిన రొట్టె)",
 "cat": "main",
 "emoji": "🥙",
 "pair": null,
@@ -542,6 +583,7 @@ export const DISHES = [
 "name_hi": "स्टेक मशवी (ग्रिल्ड स्टेक)",
 "name_bn": "স্টেক মাশওয়ি (গ্রিল করা স্টেক)",
 "name_fil": "Steak Mashwi (inihaw na steak)",
+"name_te": "స్టేక్ మశ్వీ (గ్రిల్డ్ స్టేక్)",
 "cat": "main",
 "emoji": "🥩",
 "pair": null,
@@ -559,6 +601,7 @@ export const DISHES = [
 "name_hi": "सलमून (सैल्मन मछली)",
 "name_bn": "সালমুন (স্যামন মাছ)",
 "name_fil": "Salmon (isdang salmon)",
+"name_te": "సల్మూన్ (సాల్మన్ చేప)",
 "cat": "main",
 "emoji": "🐟",
 "pair": "rice",
@@ -576,6 +619,7 @@ export const DISHES = [
 "name_hi": "सीनिया बतात प्यूरी (मसले आलू और क़ीमा ट्रे)",
 "name_bn": "সিনিয়া বাতাত পিউরি (আলু ভর্তা ও কিমার ট্রে)",
 "name_fil": "Saniyat Batat Puree (niligis na patatas at giniling sa tray)",
+"name_te": "సీనియా బతాత్ ప్యూరీ (మెత్తని బంగాళాదుంప & ఖీమా ట్రే)",
 "cat": "main",
 "emoji": "🥔",
 "pair": null
@@ -587,6 +631,7 @@ export const DISHES = [
 "name_hi": "तशरीब लहम (रोटी और मटन सालन)",
 "name_bn": "তাশরিব লাহাম (রুটি ও মাংসের ঝোল)",
 "name_fil": "Tashreeb Laham (tinapay sa sabaw ng karne)",
+"name_te": "తష్రీబ్ లహమ్ (రొట్టె & మటన్ కూర)",
 "cat": "main",
 "emoji": "🍲",
 "pair": null
@@ -598,6 +643,7 @@ export const DISHES = [
 "name_hi": "दियाय केंटकी (फ्राइड चिकन)",
 "name_bn": "দিয়াই কেন্টাকি (ফ্রাইড চিকেন)",
 "name_fil": "Dyay Kentucky (pritong manok)",
+"name_te": "దియాయ్ కెంటకీ (ఫ్రైడ్ చికెన్)",
 "cat": "main",
 "emoji": "🍗",
 "pair": null,
@@ -615,6 +661,7 @@ export const DISHES = [
 "name_hi": "मश्ख़ूल अब्यज़ (सादा सफ़ेद चावल)",
 "name_bn": "মাশখুল আবইয়াদ (সাদা ভাত)",
 "name_fil": "Mashkhool Abyadh (puting kanin)",
+"name_te": "మష్ఖూల్ అబ్యజ్ (తెల్ల అన్నం)",
 "cat": "rice",
 "emoji": "🍚",
 "pair": null
@@ -626,6 +673,7 @@ export const DISHES = [
 "name_hi": "मश्ख़ूल बतात बादिनजान (आलू-बैंगन वाले चावल)",
 "name_bn": "মাশখুল বাতাত বাদিনজান (আলু-বেগুনের ভাত)",
 "name_fil": "Mashkhool (kanin na may patatas at talong)",
+"name_te": "మష్ఖూల్ బతాత్ బాదింజాన్ (బంగాళాదుంప-వంకాయ అన్నం)",
 "cat": "rice",
 "emoji": "🍚",
 "pair": null
@@ -637,6 +685,7 @@ export const DISHES = [
 "name_hi": "मश्ख़ूल बसल हम्सा (भुने प्याज़ वाले चावल)",
 "name_bn": "মাশখুল বাসাল হামসা (ভাজা পেঁয়াজের ভাত)",
 "name_fil": "Mashkhool (kanin na may piniritong sibuyas)",
+"name_te": "మష్ఖూల్ బసల్ హమ్సా (వేయించిన ఉల్లి అన్నం)",
 "cat": "rice",
 "emoji": "🍚",
 "pair": null
@@ -648,6 +697,7 @@ export const DISHES = [
 "name_hi": "रुज़ मसरी (सेवई वाले चावल)",
 "name_bn": "রুজ মাসরি (সেমাই দেওয়া ভাত)",
 "name_fil": "Ruz Masri (kanin na may vermicelli)",
+"name_te": "రుజ్ మస్రీ (సేమియా అన్నం)",
 "cat": "rice",
 "emoji": "🍚",
 "pair": null
@@ -659,6 +709,7 @@ export const DISHES = [
 "name_hi": "बतात मक़ली (फ्रेंच फ्राइज़)",
 "name_bn": "বাতাত মাকলি (ফ্রেঞ্চ ফ্রাই)",
 "name_fil": "Batat Maqli (french fries)",
+"name_te": "బతాత్ మక్లీ (ఫ్రెంచ్ ఫ్రైస్)",
 "cat": "side",
 "emoji": "🍟",
 "pair": null,
@@ -676,6 +727,7 @@ export const DISHES = [
 "name_hi": "ख़ुब्ज़ बूरी (बूरी रोटी)",
 "name_bn": "খুবজ বুরি (বুরি রুটি)",
 "name_fil": "Khubz Boori (tinapay na boori)",
+"name_te": "ఖుబ్జ్ బూరీ (బూరీ రొట్టె)",
 "cat": "side",
 "emoji": "🫓",
 "pair": null
@@ -687,6 +739,7 @@ export const DISHES = [
 "name_hi": "रुब्यान मक़ली (तला हुआ झींगा)",
 "name_bn": "রুবিয়ান মাকলি (ভাজা চিংড়ি)",
 "name_fil": "Rubyan Maqli (pritong hipon)",
+"name_te": "రుబ్యాన్ మక్లీ (వేయించిన రొయ్యలు)",
 "cat": "side",
 "emoji": "🦐",
 "pair": null
@@ -698,6 +751,7 @@ export const DISHES = [
 "name_hi": "तहीना (तिल की चटनी)",
 "name_bn": "তাহিনা (তিলের সস)",
 "name_fil": "Tahina (sarsa ng linga)",
+"name_te": "తహీనా (నువ్వుల సాస్)",
 "cat": "side",
 "emoji": "🥣",
 "pair": null
@@ -709,6 +763,7 @@ export const DISHES = [
 "name_hi": "सलसत रुब्यान (झींगा सॉस)",
 "name_bn": "সালসাত রুবিয়ান (চিংড়ির সস)",
 "name_fil": "Salsat Rubyan (sarsa ng hipon)",
+"name_te": "సల్సత్ రుబ్యాన్ (రొయ్యల సాస్)",
 "cat": "side",
 "emoji": "🦐",
 "pair": null
@@ -720,6 +775,7 @@ export const DISHES = [
 "name_hi": "सलाता ख़ज़रा (हरा सलाद)",
 "name_bn": "সালাতা খাদরা (সবুজ সালাদ)",
 "name_fil": "Salata Khadra (berdeng salad)",
+"name_te": "సలాతా ఖజ్రా (గ్రీన్ సలాడ్)",
 "cat": "salad",
 "emoji": "🥗",
 "pair": null,
@@ -737,6 +793,7 @@ export const DISHES = [
 "name_hi": "शोरबत अदस (दाल का सूप)",
 "name_bn": "শোরবাত আদাস (ডালের স্যুপ)",
 "name_fil": "Shorbat Adas (sopas na lentil)",
+"name_te": "షోర్బత్ అదస్ (పప్పు సూప్)",
 "cat": "soup",
 "emoji": "🥣",
 "pair": null,
@@ -754,6 +811,7 @@ export const DISHES = [
 "name_hi": "शोरबत क़रअ (कद्दू का सूप)",
 "name_bn": "শোরবাত কারা (কুমড়ার স্যুপ)",
 "name_fil": "Shorbat Gara' (sopas na kalabasa)",
+"name_te": "షోర్బత్ గరా (గుమ్మడికాయ సూప్)",
 "cat": "soup",
 "emoji": "🎃",
 "pair": null,
@@ -771,6 +829,7 @@ export const DISHES = [
 "name_hi": "शोरबत ख़ुदरा (सब्ज़ियों का सूप)",
 "name_bn": "শোরবাত খুদরা (সবজির স্যুপ)",
 "name_fil": "Shorbat Khudra (sopas na gulay)",
+"name_te": "షోర్బత్ ఖుద్రా (కూరగాయల సూప్)",
 "cat": "soup",
 "emoji": "🥕",
 "pair": null,
@@ -788,6 +847,7 @@ export const DISHES = [
 "name_hi": "शोरबत मशरूम (मशरूम सूप)",
 "name_bn": "শোরবাত মাশরুম (মাশরুম স্যুপ)",
 "name_fil": "Shorbat Mushroom (sopas na kabute)",
+"name_te": "షోర్బత్ మష్రూమ్ (పుట్టగొడుగుల సూప్)",
 "cat": "soup",
 "emoji": "🍄",
 "pair": null,
@@ -805,6 +865,7 @@ export const DISHES = [
 "name_hi": "शोरबत जज़र (गाजर का सूप)",
 "name_bn": "শোরবাত জাজার (গাজরের স্যুপ)",
 "name_fil": "Shorbat Jazar (sopas na karot)",
+"name_te": "షోర్బత్ జజర్ (క్యారెట్ సూప్)",
 "cat": "soup",
 "emoji": "🥕",
 "pair": null,
@@ -822,6 +883,7 @@ export const DISHES = [
 "name_hi": "शोरबत तमात (टमाटर का सूप)",
 "name_bn": "শোরবাত তামাত (টমেটো স্যুপ)",
 "name_fil": "Shorbat Tamat (sopas na kamatis)",
+"name_te": "షోర్బత్ తమాత్ (టమాటా సూప్)",
 "cat": "soup",
 "emoji": "🍅",
 "pair": null,
@@ -839,6 +901,7 @@ export const DISHES = [
 "name_hi": "मरक़ूक़ (मटन-सब्ज़ी सालन में पतली रोटी)",
 "name_bn": "মারকুক (মাংস-সবজির ঝোলে পাতলা রুটি)",
 "name_fil": "Marqooq (manipis na masa sa sabaw ng karne at gulay)",
+"name_te": "మర్కూక్ (మటన్-కూరగాయల కూరలో పలుచని రొట్టె)",
 "cat": "main",
 "emoji": "🍲",
 "pair": null
@@ -850,6 +913,7 @@ export const DISHES = [
 "name_hi": "क़ुब्बूत (भरवां आटे की गोलियां सालन में)",
 "name_bn": "কাব্বুত (পুর ভরা আটার বল ঝোলে)",
 "name_fil": "Qabboot (bola ng masa na may palaman sa sabaw)",
+"name_te": "ఖుబ్బూత్ (కూరలో నింపిన పిండి ఉండలు)",
 "cat": "main",
 "emoji": "🥟",
 "pair": null
@@ -861,6 +925,7 @@ export const DISHES = [
 "name_hi": "फ़िल्फ़िल महशी (भरवां शिमला मिर्च)",
 "name_bn": "ফিলফিল মাহশি (পুর ভরা ক্যাপসিকাম)",
 "name_fil": "Felfel Mahshi (bell pepper na may palaman)",
+"name_te": "ఫిల్ఫిల్ మహ్షీ (నింపిన క్యాప్సికమ్)",
 "cat": "main",
 "emoji": "🫑",
 "pair": null
@@ -872,6 +937,7 @@ export const DISHES = [
 "name_hi": "कूसा महशी (भरवां ज़ुकिनी)",
 "name_bn": "কুসা মাহশি (পুর ভরা জুকিনি)",
 "name_fil": "Kousa Mahshi (zucchini na may palaman)",
+"name_te": "కూసా మహ్షీ (నింపిన జుకినీ)",
 "cat": "main",
 "emoji": "🥒",
 "pair": null
@@ -883,6 +949,7 @@ export const DISHES = [
 "name_hi": "मलफ़ूफ़ (भरवां पत्ता गोभी रोल)",
 "name_bn": "মালফুফ (পুর ভরা বাঁধাকপি রোল)",
 "name_fil": "Malfouf (repolyo na may palaman)",
+"name_te": "మల్ఫూఫ్ (నింపిన క్యాబేజీ రోల్స్)",
 "cat": "main",
 "emoji": "🥬",
 "pair": null
@@ -894,6 +961,7 @@ export const DISHES = [
 "name_hi": "मरक़ सबानिख़ (पालक का सालन)",
 "name_bn": "মারাক সাবানেখ (পালং শাকের ঝোল)",
 "name_fil": "Maraq Sabanekh (spinach na may sarsa)",
+"name_te": "మరక్ సబానిఖ్ (పాలకూర కూర)",
 "cat": "main",
 "emoji": "🥬",
 "pair": "rice"
@@ -905,6 +973,7 @@ export const DISHES = [
 "name_hi": "फ़तीरा सबानिख़ दियाय (पालक-चिकन पाई)",
 "name_bn": "ফাতিরা সাবানেখ দিয়াই (পালং-মুরগির পাই)",
 "name_fil": "Fateerat Sabanekh (pie na may spinach at manok)",
+"name_te": "ఫతీరా సబానిఖ్ దియాయ్ (పాలకూర-చికెన్ పై)",
 "cat": "main",
 "emoji": "🥧",
 "pair": null
@@ -916,6 +985,7 @@ export const DISHES = [
 "name_hi": "फत्तूश (कुरकुरी रोटी वाला सलाद)",
 "name_bn": "ফাত্তুশ (মচমচে রুটির সালাদ)",
 "name_fil": "Fattoush (salad na may pritong tinapay)",
+"name_te": "ఫత్తూష్ (కరకరలాడే రొట్టె సలాడ్)",
 "cat": "salad",
 "emoji": "🥗",
 "pair": null,
@@ -933,6 +1003,7 @@ export const DISHES = [
 "name_hi": "तबूले (अजमोद सलाद)",
 "name_bn": "তাবুলে (পার্সলে সালাদ)",
 "name_fil": "Tabbouleh (salad na perehil)",
+"name_te": "తబ్బూలే (పార్స్లీ సలాడ్)",
 "cat": "salad",
 "emoji": "🌿",
 "pair": null,
@@ -950,6 +1021,7 @@ export const DISHES = [
 "name_hi": "सलाता लबन ख़ियार (दही-खीरा)",
 "name_bn": "সালাতা লাবান খিয়ার (দই-শসা)",
 "name_fil": "Salatat Laban w Khyar (pipino at yogurt)",
+"name_te": "సలాతా లబన్ ఖియార్ (పెరుగు-దోసకాయ)",
 "cat": "salad",
 "emoji": "🥒",
 "pair": null,
@@ -967,6 +1039,7 @@ export const DISHES = [
 "name_hi": "सलाता जरजीर (अरुगुला सलाद)",
 "name_bn": "সালাতা জারজির (আরুগুলা সালাদ)",
 "name_fil": "Salatat Jarjeer (arugula salad)",
+"name_te": "సలాతా జర్జీర్ (అరుగులా సలాడ్)",
 "cat": "salad",
 "emoji": "🥬",
 "pair": null
@@ -978,6 +1051,7 @@ export const DISHES = [
 "name_hi": "साग़ो (साबूदाना मीठा)",
 "name_bn": "সাগো (সাবুদানার মিষ্টি)",
 "name_fil": "Sago (matamis na sago)",
+"name_te": "సాగో (సగ్గుబియ్యం పాయసం)",
 "cat": "dessert",
 "emoji": "🍮",
 "pair": null
@@ -989,6 +1063,7 @@ export const DISHES = [
 "name_hi": "मुहल्लबिया (दूध का पुडिंग)",
 "name_bn": "মুহাল্লাবিয়া (দুধের পুডিং)",
 "name_fil": "Muhallabia (pudding na gatas)",
+"name_te": "ముహల్లబియా (పాల పుడ్డింగ్)",
 "cat": "dessert",
 "emoji": "🍮",
 "pair": null,
@@ -1006,6 +1081,7 @@ export const DISHES = [
 "name_hi": "क्रीम कैरामल",
 "name_bn": "ক্রিম ক্যারামেল",
 "name_fil": "Leche flan (crème caramel)",
+"name_te": "క్రీమ్ కారమెల్",
 "cat": "dessert",
 "emoji": "🍮",
 "pair": null,
@@ -1023,6 +1099,7 @@ export const DISHES = [
 "name_hi": "फ़वाकेह (कटे फल)",
 "name_bn": "ফাওয়াকেহ (কাটা ফল)",
 "name_fil": "Fawakih (hiniwang prutas)",
+"name_te": "ఫవాకిహ్ (కోసిన పండ్లు)",
 "cat": "dessert",
 "emoji": "🍉",
 "pair": null,
@@ -1042,6 +1119,7 @@ export const ITEMS = [
 "name_hi": "चिकन (मुर्गा)",
 "name_bn": "মুরগি",
 "name_fil": "Manok",
+"name_te": "చికెన్ (కోడి)",
 "unit": "pcs",
 "emoji": "🐔"
 },
@@ -1052,6 +1130,7 @@ export const ITEMS = [
 "name_hi": "मटन",
 "name_bn": "খাসির মাংস",
 "name_fil": "Karne ng tupa",
+"name_te": "మటన్",
 "unit": "kg",
 "emoji": "🐑"
 },
@@ -1062,6 +1141,7 @@ export const ITEMS = [
 "name_hi": "बीफ़",
 "name_bn": "গরুর মাংস",
 "name_fil": "Karne ng baka",
+"name_te": "బీఫ్",
 "unit": "kg",
 "emoji": "🐄"
 },
@@ -1072,6 +1152,7 @@ export const ITEMS = [
 "name_hi": "मछली",
 "name_bn": "মাছ",
 "name_fil": "Isda",
+"name_te": "చేప",
 "unit": "kg",
 "emoji": "🐟"
 },
@@ -1082,6 +1163,7 @@ export const ITEMS = [
 "name_hi": "झींगा",
 "name_bn": "চিংড়ি",
 "name_fil": "Hipon",
+"name_te": "రొయ్యలు",
 "unit": "kg",
 "emoji": "🦐"
 },
@@ -1092,6 +1174,7 @@ export const ITEMS = [
 "name_hi": "अंडे",
 "name_bn": "ডিম",
 "name_fil": "Itlog",
+"name_te": "గుడ్లు",
 "unit": "tray",
 "emoji": "🥚"
 },
@@ -1102,6 +1185,7 @@ export const ITEMS = [
 "name_hi": "बासमती चावल",
 "name_bn": "বাসমতি চাল",
 "name_fil": "Bigas basmati",
+"name_te": "బాస్మతి బియ్యం",
 "unit": "bag",
 "emoji": "🍚"
 },
@@ -1112,6 +1196,7 @@ export const ITEMS = [
 "name_hi": "आटा / मैदा",
 "name_bn": "ময়দা",
 "name_fil": "Harina",
+"name_te": "పిండి / మైదా",
 "unit": "bag",
 "emoji": "🌾"
 },
@@ -1122,6 +1207,7 @@ export const ITEMS = [
 "name_hi": "चीनी",
 "name_bn": "চিনি",
 "name_fil": "Asukal",
+"name_te": "చక్కెర",
 "unit": "kg",
 "emoji": "🍬"
 },
@@ -1132,6 +1218,7 @@ export const ITEMS = [
 "name_hi": "नमक",
 "name_bn": "লবণ",
 "name_fil": "Asin",
+"name_te": "ఉప్పు",
 "unit": "pack",
 "emoji": "🧂"
 },
@@ -1142,6 +1229,7 @@ export const ITEMS = [
 "name_hi": "खाने का तेल",
 "name_bn": "রান্নার তেল",
 "name_fil": "Mantika",
+"name_te": "వంట నూనె",
 "unit": "bottle",
 "emoji": "🫒"
 },
@@ -1152,6 +1240,7 @@ export const ITEMS = [
 "name_hi": "घी",
 "name_bn": "ঘি",
 "name_fil": "Ghee",
+"name_te": "నెయ్యి",
 "unit": "can",
 "emoji": "🧈"
 },
@@ -1162,6 +1251,7 @@ export const ITEMS = [
 "name_hi": "मक्खन",
 "name_bn": "মাখন",
 "name_fil": "Mantikilya",
+"name_te": "వెన్న",
 "unit": "pack",
 "emoji": "🧈"
 },
@@ -1172,6 +1262,7 @@ export const ITEMS = [
 "name_hi": "दूध",
 "name_bn": "দুধ",
 "name_fil": "Gatas",
+"name_te": "పాలు",
 "unit": "L",
 "emoji": "🥛"
 },
@@ -1182,6 +1273,7 @@ export const ITEMS = [
 "name_hi": "लबन (छाछ)",
 "name_bn": "লাবান (ঘোল)",
 "name_fil": "Laban (buttermilk)",
+"name_te": "లబన్ (మజ్జిగ)",
 "unit": "L",
 "emoji": "🥛"
 },
@@ -1192,6 +1284,7 @@ export const ITEMS = [
 "name_hi": "दही",
 "name_bn": "দই",
 "name_fil": "Yogurt",
+"name_te": "పెరుగు",
 "unit": "pack",
 "emoji": "🥣"
 },
@@ -1202,6 +1295,7 @@ export const ITEMS = [
 "name_hi": "चीज़",
 "name_bn": "চিজ",
 "name_fil": "Keso",
+"name_te": "చీజ్",
 "unit": "pack",
 "emoji": "🧀"
 },
@@ -1212,6 +1306,7 @@ export const ITEMS = [
 "name_hi": "ब्रेड / रोटी",
 "name_bn": "রুটি / পাউরুটি",
 "name_fil": "Tinapay",
+"name_te": "బ్రెడ్ / రొట్టె",
 "unit": "pack",
 "emoji": "🍞"
 },
@@ -1222,6 +1317,7 @@ export const ITEMS = [
 "name_hi": "टमाटर",
 "name_bn": "টমেটো",
 "name_fil": "Kamatis",
+"name_te": "టమాటాలు",
 "unit": "kg",
 "emoji": "🍅"
 },
@@ -1232,6 +1328,7 @@ export const ITEMS = [
 "name_hi": "प्याज़",
 "name_bn": "পেঁয়াজ",
 "name_fil": "Sibuyas",
+"name_te": "ఉల్లిపాయలు",
 "unit": "kg",
 "emoji": "🧅"
 },
@@ -1242,6 +1339,7 @@ export const ITEMS = [
 "name_hi": "लहसुन",
 "name_bn": "রসুন",
 "name_fil": "Bawang",
+"name_te": "వెల్లుల్లి",
 "unit": "pack",
 "emoji": "🧄"
 },
@@ -1252,6 +1350,7 @@ export const ITEMS = [
 "name_hi": "आलू",
 "name_bn": "আলু",
 "name_fil": "Patatas",
+"name_te": "బంగాళాదుంపలు",
 "unit": "kg",
 "emoji": "🥔"
 },
@@ -1262,6 +1361,7 @@ export const ITEMS = [
 "name_hi": "खीरा",
 "name_bn": "শসা",
 "name_fil": "Pipino",
+"name_te": "దోసకాయ",
 "unit": "kg",
 "emoji": "🥒"
 },
@@ -1272,6 +1372,7 @@ export const ITEMS = [
 "name_hi": "सलाद पत्ता (लेट्यूस)",
 "name_bn": "লেটুস",
 "name_fil": "Litsugas",
+"name_te": "లెట్యూస్ (సలాడ్ ఆకు)",
 "unit": "pcs",
 "emoji": "🥬"
 },
@@ -1282,6 +1383,7 @@ export const ITEMS = [
 "name_hi": "नींबू",
 "name_bn": "লেবু",
 "name_fil": "Lemon",
+"name_te": "నిమ్మకాయలు",
 "unit": "kg",
 "emoji": "🍋"
 },
@@ -1292,6 +1394,7 @@ export const ITEMS = [
 "name_hi": "सूखा नींबू (लूमी)",
 "name_bn": "শুকনো লেবু (লুমি)",
 "name_fil": "Loomi (tuyong lemon)",
+"name_te": "ఎండు నిమ్మ (లూమీ)",
 "unit": "pack",
 "emoji": "🍋"
 },
@@ -1302,6 +1405,7 @@ export const ITEMS = [
 "name_hi": "हरी मिर्च",
 "name_bn": "কাঁচা মরিচ",
 "name_fil": "Siling berde",
+"name_te": "పచ్చిమిర్చి",
 "unit": "pack",
 "emoji": "🌶️"
 },
@@ -1312,6 +1416,7 @@ export const ITEMS = [
 "name_hi": "शिमला मिर्च",
 "name_bn": "ক্যাপসিকাম",
 "name_fil": "Bell pepper",
+"name_te": "క్యాప్సికమ్",
 "unit": "kg",
 "emoji": "🫑"
 },
@@ -1322,6 +1427,7 @@ export const ITEMS = [
 "name_hi": "गाजर",
 "name_bn": "গাজর",
 "name_fil": "Karot",
+"name_te": "క్యారెట్",
 "unit": "kg",
 "emoji": "🥕"
 },
@@ -1332,6 +1438,7 @@ export const ITEMS = [
 "name_hi": "बैंगन",
 "name_bn": "বেগুন",
 "name_fil": "Talong",
+"name_te": "వంకాయ",
 "unit": "kg",
 "emoji": "🍆"
 },
@@ -1342,6 +1449,7 @@ export const ITEMS = [
 "name_hi": "तोरी (ज़ुकिनी)",
 "name_bn": "জুকিনি",
 "name_fil": "Zucchini",
+"name_te": "జుకినీ",
 "unit": "kg",
 "emoji": "🥒"
 },
@@ -1352,6 +1460,7 @@ export const ITEMS = [
 "name_hi": "भिंडी",
 "name_bn": "ঢেঁড়স",
 "name_fil": "Okra",
+"name_te": "బెండకాయ",
 "unit": "kg",
 "emoji": "🫛"
 },
@@ -1362,6 +1471,7 @@ export const ITEMS = [
 "name_hi": "अजमोद (पार्सले)",
 "name_bn": "পার্সলে",
 "name_fil": "Perehil (parsley)",
+"name_te": "పార్స్లీ",
 "unit": "bunch",
 "emoji": "🌿"
 },
@@ -1372,6 +1482,7 @@ export const ITEMS = [
 "name_hi": "हरा धनिया",
 "name_bn": "ধনেপাতা",
 "name_fil": "Wansoy (kulantro)",
+"name_te": "కొత్తిమీర",
 "unit": "bunch",
 "emoji": "🌿"
 },
@@ -1382,6 +1493,7 @@ export const ITEMS = [
 "name_hi": "पुदीना",
 "name_bn": "পুদিনা",
 "name_fil": "Yerba buena (mint)",
+"name_te": "పుదీనా",
 "unit": "bunch",
 "emoji": "🌱"
 },
@@ -1392,6 +1504,7 @@ export const ITEMS = [
 "name_hi": "टमाटर पेस्ट",
 "name_bn": "টমেটো পেস্ট",
 "name_fil": "Tomato paste",
+"name_te": "టమాటా పేస్ట్",
 "unit": "can",
 "emoji": "🥫"
 },
@@ -1402,6 +1515,7 @@ export const ITEMS = [
 "name_hi": "मिक्स मसाला",
 "name_bn": "মিক্স মসলা",
 "name_fil": "Halo-halong pampalasa",
+"name_te": "మిక్స్ మసాలా",
 "unit": "pack",
 "emoji": "🫙"
 },
@@ -1412,6 +1526,7 @@ export const ITEMS = [
 "name_hi": "हल्दी",
 "name_bn": "হলুদ",
 "name_fil": "Luyang dilaw (turmeric)",
+"name_te": "పసుపు",
 "unit": "pack",
 "emoji": "🫙"
 },
@@ -1422,6 +1537,7 @@ export const ITEMS = [
 "name_hi": "इलायची",
 "name_bn": "এলাচ",
 "name_fil": "Cardamom",
+"name_te": "యాలకులు",
 "unit": "pack",
 "emoji": "🫙"
 },
@@ -1432,6 +1548,7 @@ export const ITEMS = [
 "name_hi": "केसर",
 "name_bn": "জাফরান",
 "name_fil": "Saffron",
+"name_te": "కుంకుమపువ్వు",
 "unit": "pack",
 "emoji": "🌼"
 },
@@ -1442,6 +1559,7 @@ export const ITEMS = [
 "name_hi": "मैगी क्यूब (स्टॉक)",
 "name_bn": "ম্যাগি কিউব (স্টক)",
 "name_fil": "Stock cubes",
+"name_te": "మ్యాగీ క్యూబ్ (స్టాక్)",
 "unit": "pack",
 "emoji": "🧊"
 },
@@ -1452,6 +1570,7 @@ export const ITEMS = [
 "name_hi": "दाल",
 "name_bn": "ডাল",
 "name_fil": "Lentil",
+"name_te": "పప్పు",
 "unit": "kg",
 "emoji": "🫘"
 },
@@ -1462,6 +1581,7 @@ export const ITEMS = [
 "name_hi": "काबुली चना",
 "name_bn": "কাবুলি ছোলা",
 "name_fil": "Garbanzos (chickpeas)",
+"name_te": "శనగలు (కాబూలీ)",
 "unit": "kg",
 "emoji": "🫘"
 },
@@ -1472,6 +1592,7 @@ export const ITEMS = [
 "name_hi": "पास्ता",
 "name_bn": "পাস্তা",
 "name_fil": "Pasta",
+"name_te": "పాస్తా",
 "unit": "pack",
 "emoji": "🍝"
 },
@@ -1482,6 +1603,7 @@ export const ITEMS = [
 "name_hi": "फल",
 "name_bn": "ফল",
 "name_fil": "Prutas",
+"name_te": "పండ్లు",
 "unit": "kg",
 "emoji": "🍎"
 },
@@ -1492,6 +1614,7 @@ export const ITEMS = [
 "name_hi": "पीने का पानी",
 "name_bn": "খাবার পানি",
 "name_fil": "Inuming tubig",
+"name_te": "తాగునీరు",
 "unit": "carton",
 "emoji": "💧"
 },
@@ -1502,6 +1625,7 @@ export const ITEMS = [
 "name_hi": "टिशू पेपर",
 "name_bn": "টিস্যু",
 "name_fil": "Tisyu",
+"name_te": "టిష్యూ పేపర్",
 "unit": "pack",
 "emoji": "🧻"
 },
@@ -1512,6 +1636,7 @@ export const ITEMS = [
 "name_hi": "कचरे की थैली",
 "name_bn": "ময়লার ব্যাগ",
 "name_fil": "Supot ng basura",
+"name_te": "చెత్త సంచులు",
 "unit": "pack",
 "emoji": "🗑️"
 },
@@ -1522,6 +1647,7 @@ export const ITEMS = [
 "name_hi": "बर्तन धोने का साबुन",
 "name_bn": "থালা-বাসন ধোয়ার সাবান",
 "name_fil": "Sabong panghugas ng pinggan",
+"name_te": "గిన్నెలు కడిగే సబ్బు",
 "unit": "bottle",
 "emoji": "🧴"
 },
@@ -1532,6 +1658,7 @@ export const ITEMS = [
 "name_hi": "एल्युमिनियम फॉयल",
 "name_bn": "অ্যালুমিনিয়াম ফয়েল",
 "name_fil": "Aluminum foil",
+"name_te": "అల్యూమినియం ఫాయిల్",
 "unit": "pcs",
 "emoji": "🥡"
 }

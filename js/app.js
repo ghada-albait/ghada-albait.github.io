@@ -2,10 +2,10 @@
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
 import { getAuth, signInAnonymously, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
 import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager, doc, getDoc, setDoc, updateDoc, deleteDoc, collection, addDoc, onSnapshot, query, where, orderBy, limit, writeBatch } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
-import { firebaseConfig } from './firebase-config.js?v=10';
-import { I18N, QUICK_NOTES } from './i18n.js?v=10';
-import { DISHES, ITEMS } from './seed.js?v=10';
-import { HELP } from './help.js?v=10';
+import { firebaseConfig } from './firebase-config.js?v=11';
+import { I18N, QUICK_NOTES } from './i18n.js?v=11';
+import { DISHES, ITEMS } from './seed.js?v=11';
+import { HELP } from './help.js?v=11';
 
 const fbApp = initializeApp(firebaseConfig);
 const auth = getAuth(fbApp);
@@ -23,6 +23,7 @@ const LANGS = {
   hi: { dir: 'ltr', loc: 'hi-IN', label: 'हिन्दी', gt: 'hi' },
   bn: { dir: 'ltr', loc: 'bn-BD-u-nu-latn', label: 'বাংলা', gt: 'bn' },
   fil: { dir: 'ltr', loc: 'fil-PH', label: 'Filipino', gt: 'tl' },
+  te: { dir: 'ltr', loc: 'te-IN', label: 'తెలుగు', gt: 'te' },
   en: { dir: 'ltr', loc: 'en-GB', label: 'English', gt: 'en' }
 };
 const WD_AR = ['الأحد', 'الاثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة', 'السبت'];
@@ -91,7 +92,7 @@ function render() {
   applySearch();
 }
 function langChips(cur) {
-  return `<div class="chips">${['ar', 'hi', 'bn', 'fil', 'en'].map(k => `<button class="chip ${cur === k ? 'on' : ''}" data-act="setLang" data-v="${k}">${LANGS[k].label}</button>`).join('')}</div>`;
+  return `<div class="chips">${['ar', 'hi', 'bn', 'te', 'fil', 'en'].map(k => `<button class="chip ${cur === k ? 'on' : ''}" data-act="setLang" data-v="${k}">${LANGS[k].label}</button>`).join('')}</div>`;
 }
 function loginView() {
   return `<div class="login">
@@ -216,7 +217,7 @@ function daysView(start, n, admin) {
 }
 function applySearch() { document.querySelectorAll('input[data-search]').forEach(inp => { const g = inp.dataset.search, q = (S.sq[g] || '').trim().toLowerCase(); if (inp.value !== (S.sq[g] || '')) inp.value = S.sq[g] || ''; document.querySelectorAll(`[data-sg="${g}"]`).forEach(el => { el.style.display = !q || (el.dataset.key || '').includes(q) ? '' : 'none'; }); }); }
 const searchBox = (g, ph) => `<input class="searchbox" data-search="${g}" placeholder="🔍 ${esc(ph)}" autocomplete="off">`;
-const keyOf = o => esc([o.name_ar, o.name_en, o.name_hi, o.name_bn, o.name_fil, o.custom].filter(Boolean).join(' ').toLowerCase());
+const keyOf = o => esc([o.name_ar, o.name_en, o.name_hi, o.name_bn, o.name_te, o.name_fil, o.custom].filter(Boolean).join(' ').toLowerCase());
 /* ---------------- views ---------------- */
 function familyView() {
   const td = today();
@@ -315,7 +316,7 @@ function myMsgsHtml() {
   return list.map(m => `<div class="card flat" style="margin:8px 0"><div style="display:flex;justify-content:space-between;gap:8px"><span class="badge ${m.status === 'done' ? 'ok' : 'gray'}">${esc(m.status === 'done' ? t('st_done') : t('st_new'))}</span><span class="meta">${esc(timeAgo(m.at))}</span></div>${msgDish(m)}${m.text ? `<p style="margin:6px 0 0">${esc(m.text)}</p>` : ''}${m.reply ? `<div class="note" style="margin:8px 0 0"><b>${esc(t('reply'))}</b><div dir="rtl">${esc(m.reply)}${L() !== 'ar' ? ` <a class="tr" href="${trLink(m.reply, 'ar', LANGS[L()].gt)}" target="_blank" rel="noopener">${esc(t('translate'))} ›</a>` : ''}</div></div>` : ''}</div>`).join('');
 }
 function modalMsgs() { M.save = null; return `<h3>${esc(t('messages'))}</h3>${S.role === 'driver' ? `<button class="block" data-act="compose" data-v="msg">💬 ${esc(t('msgAdmin'))}</button>` : `<div class="two"><button data-act="compose" data-v="suggest">🍽️ ${esc(t('suggestDish'))}</button><button class="soft" data-act="compose" data-v="msg">💬 ${esc(t('msgAdmin'))}</button></div>`}${myMsgsHtml()}`; }
-function dishTile(d) { const k = [d.name_ar, d.name_en, d.name_hi, d.name_bn, d.name_fil].join(' ').toLowerCase(); const s = photoSrc(d); return `<button class="tile" data-act="pickDish" data-id="${d.id}" data-key="${esc(k)}">${s ? `<img src="${esc(s)}" alt="" loading="lazy" style="width:100%;height:64px;object-fit:cover;border-radius:10px">` : `<span class="te">${esc(d.emoji || '🍽️')}</span>`}<span>${esc(split(nm(d))[0])}</span></button>`; }
+function dishTile(d) { const k = [d.name_ar, d.name_en, d.name_hi, d.name_bn, d.name_te, d.name_fil].join(' ').toLowerCase(); const s = photoSrc(d); return `<button class="tile" data-act="pickDish" data-id="${d.id}" data-key="${esc(k)}">${s ? `<img src="${esc(s)}" alt="" loading="lazy" style="width:100%;height:64px;object-fit:cover;border-radius:10px">` : `<span class="te">${esc(d.emoji || '🍽️')}</span>`}<span>${esc(split(nm(d))[0])}</span></button>`; }
 function modalCompose() {
   if (M.kind === 'suggest' && !M.dishId) {
     M.save = null;
@@ -385,7 +386,7 @@ function renderModal() {
   else if (M.type === 'reply') h += `<h3>رد على الرسالة</h3><div class="field"><textarea data-m="reply" placeholder="يظهر للمرسل مع زر ترجمة">${esc(M.reply || '')}</textarea></div>`;
   else if (M.type === 'pickDate') h += `<h3>أي يوم؟</h3><div class="chips">${Array.from({ length: 14 }, (_, i) => addDays(today(), i)).map(x => `<button class="chip" data-act="msgToMenuDate" data-v="${x}">${esc(wdName(x))} ${esc(fmt(x, { day: 'numeric' }))}</button>`).join('')}</div>`;
   else if (M.type === 'pin') h += `<h3>رمز ${ROLE_AR[M.role]}</h3><div class="field"><label>الرمز الجديد (${M.role === 'admin' ? '6' : '4 إلى 6'} أرقام)</label><input data-m="pin" class="pinbox" inputmode="numeric" maxlength="6" value="${esc(M.pin || '')}"></div><p class="small mute">احفظ الرمز عندك، فالتطبيق لا يعرضه بعد الحفظ.</p>`;
-  else if (M.type === 'invite') h += `<h3>دعوة ${ROLE_AR[M.role]}</h3><div class="field"><label>اكتب رمز ${ROLE_AR[M.role]} ليُضاف للرسالة</label><input data-m="pin" class="pinbox" inputmode="numeric" maxlength="6" value="${esc(M.pin || '')}"></div><div class="field"><label>لغة الرسالة</label><div class="chips">${['hi', 'bn', 'fil', 'en', 'ar'].map(k => `<button class="chip ${M.lang === k ? 'on' : ''}" data-act="invLang" data-v="${k}">${LANGS[k].label}</button>`).join('')}</div></div>`;
+  else if (M.type === 'invite') h += `<h3>دعوة ${ROLE_AR[M.role]}</h3><div class="field"><label>اكتب رمز ${ROLE_AR[M.role]} ليُضاف للرسالة</label><input data-m="pin" class="pinbox" inputmode="numeric" maxlength="6" value="${esc(M.pin || '')}"></div><div class="field"><label>لغة الرسالة</label><div class="chips">${['hi', 'bn', 'te', 'fil', 'en', 'ar'].map(k => `<button class="chip ${M.lang === k ? 'on' : ''}" data-act="invLang" data-v="${k}">${LANGS[k].label}</button>`).join('')}</div></div>`;
   h += `<div class="btns"><button class="ghost" data-act="closeModal">${esc(t('cancel'))}</button>${M.save ? `<button data-act="${M.save}" ${M.busy ? 'disabled' : ''}>${M.busy ? '<span class="spin"></span>' : esc(M.saveLabel || t('save'))}</button>` : ''}</div>`;
   $sheet.innerHTML = h;
 }
@@ -408,7 +409,7 @@ function modalHelp() {
   h += `<div class="note"><b>${esc(T.tip)}</b>${esc(g.tip)}</div>`;
   return h;
 }
-function itemTile(i) { const k = [i.name_ar, i.name_en, i.name_hi, i.name_bn, i.name_fil].join(' ').toLowerCase(); return `<button class="tile" data-act="pickItem" data-id="${i.id}" data-key="${esc(k)}"><span class="te">${esc(i.emoji || '🛒')}</span><span>${esc(nm(i))}</span>${L() !== 'ar' ? `<span class="ta">${esc(i.name_ar)}</span>` : ''}</button>`; }
+function itemTile(i) { const k = [i.name_ar, i.name_en, i.name_hi, i.name_bn, i.name_te, i.name_fil].join(' ').toLowerCase(); return `<button class="tile" data-act="pickItem" data-id="${i.id}" data-key="${esc(k)}"><span class="te">${esc(i.emoji || '🛒')}</span><span>${esc(nm(i))}</span>${L() !== 'ar' ? `<span class="ta">${esc(i.name_ar)}</span>` : ''}</button>`; }
 function modalShort() {
   const buy = M.mode === 'buy';
   if (!M.sel) {
@@ -436,7 +437,7 @@ function modalDay() {
   h += `<div class="field"><span class="flabel">ملاحظات جاهزة (تُترجم تلقائياً للطباخ)</span><div class="chips">${Object.entries(QUICK_NOTES).map(([k, v]) => `<button class="chip ${M.notes.includes(k) ? 'on' : ''}" data-act="toggleNote" data-v="${k}">${esc(v.ar)}</button>`).join('')}</div></div><div class="field"><label>ملاحظة أخرى</label><textarea data-m="note" placeholder="يظهر للطباخ بالعربي مع زر ترجمة">${esc(M.note || '')}</textarea></div>`;
   return h;
 }
-function nameFields() { return ['ar', 'en', 'hi', 'bn', 'fil'].map(l => `<div class="field"><label>${{ ar: 'الاسم بالعربي', en: 'English', hi: 'हिन्दी', bn: 'বাংলা', fil: 'Filipino' }[l]}</label><input data-m="name_${l}" value="${esc(M['name_' + l] || '')}"></div>`).join(''); }
+function nameFields() { return ['ar', 'en', 'hi', 'bn', 'te', 'fil'].map(l => `<div class="field"><label>${{ ar: 'الاسم بالعربي', en: 'English', hi: 'हिन्दी', bn: 'বাংলা', te: 'తెలుగు', fil: 'Filipino' }[l]}</label><input data-m="name_${l}" value="${esc(M['name_' + l] || '')}"></div>`).join(''); }
 function modalDish() {
   M.save = 'saveDish';
   const d = M.id && S.dishes[M.id];
@@ -609,12 +610,12 @@ const ACT = {
     for (const d of ds) { await deleteDoc(H('menu', d)); delete S.menus[d]; }
     genDone = false; await maybeGenerate(true); toast('تم توليد منيو جديد');
   },
-  dish(v, id) { const d = id ? S.dishes[id] : null; confirmKey = null; openModal(Object.assign({ type: 'dish', id: id || null, cat: 'main', emoji: '🍽️' }, d ? { name_ar: d.name_ar, name_en: d.name_en, name_hi: d.name_hi, name_bn: d.name_bn, name_fil: d.name_fil, cat: d.cat, emoji: d.emoji, pairRice: d.pair === 'rice' } : {})); },
-  item(v, id) { const d = id ? S.items[id] : null; confirmKey = null; openModal(Object.assign({ type: 'item', id: id || null, unit: 'pcs', emoji: '🛒' }, d ? { name_ar: d.name_ar, name_en: d.name_en, name_hi: d.name_hi, name_bn: d.name_bn, name_fil: d.name_fil, unit: d.unit, emoji: d.emoji } : {})); },
+  dish(v, id) { const d = id ? S.dishes[id] : null; confirmKey = null; openModal(Object.assign({ type: 'dish', id: id || null, cat: 'main', emoji: '🍽️' }, d ? { name_ar: d.name_ar, name_en: d.name_en, name_hi: d.name_hi, name_bn: d.name_bn, name_te: d.name_te, name_fil: d.name_fil, cat: d.cat, emoji: d.emoji, pairRice: d.pair === 'rice' } : {})); },
+  item(v, id) { const d = id ? S.items[id] : null; confirmKey = null; openModal(Object.assign({ type: 'item', id: id || null, unit: 'pcs', emoji: '🛒' }, d ? { name_ar: d.name_ar, name_en: d.name_en, name_hi: d.name_hi, name_bn: d.name_bn, name_te: d.name_te, name_fil: d.name_fil, unit: d.unit, emoji: d.emoji } : {})); },
   async saveDish() {
     if (!(M.name_ar || '').trim()) return toast('اكتب الاسم');
     const id = M.id || ('d-' + Date.now().toString(36)), old = S.dishes[id] || {};
-    const data = { name_ar: M.name_ar.trim(), name_en: (M.name_en || '').trim(), name_hi: (M.name_hi || '').trim(), name_bn: (M.name_bn || '').trim(), name_fil: (M.name_fil || '').trim(), cat: M.cat, emoji: (M.emoji || '').trim() || '🍽️', active: old.active !== false, pair: M.pairRice ? 'rice' : null };
+    const data = { name_ar: M.name_ar.trim(), name_en: (M.name_en || '').trim(), name_hi: (M.name_hi || '').trim(), name_bn: (M.name_bn || '').trim(), name_te: (M.name_te || '').trim(), name_fil: (M.name_fil || '').trim(), cat: M.cat, emoji: (M.emoji || '').trim() || '🍽️', active: old.active !== false, pair: M.pairRice ? 'rice' : null };
     if (old.photo) data.photo = old.photo;
     await setDoc(H('dishes', id), data); toast('تم الحفظ'); closeModal();
   },
@@ -625,7 +626,7 @@ const ACT = {
   async saveItem() {
     if (!(M.name_ar || '').trim()) return toast('اكتب الاسم');
     const id = M.id || ('i-' + Date.now().toString(36));
-    await setDoc(H('items', id), { name_ar: M.name_ar.trim(), name_en: (M.name_en || '').trim(), name_hi: (M.name_hi || '').trim(), name_bn: (M.name_bn || '').trim(), name_fil: (M.name_fil || '').trim(), unit: M.unit, emoji: (M.emoji || '').trim() || '🛒' });
+    await setDoc(H('items', id), { name_ar: M.name_ar.trim(), name_en: (M.name_en || '').trim(), name_hi: (M.name_hi || '').trim(), name_bn: (M.name_bn || '').trim(), name_te: (M.name_te || '').trim(), name_fil: (M.name_fil || '').trim(), unit: M.unit, emoji: (M.emoji || '').trim() || '🛒' });
     toast('تم الحفظ'); closeModal();
   },
   async delItem() { if (confirmKey !== 'item') { confirmKey = 'item'; renderModal(); return; } confirmKey = null; await deleteDoc(H('items', M.id)); toast('تم الحذف'); closeModal(); },
@@ -695,7 +696,7 @@ window.addEventListener('online', () => { S.offline = false; schedule(); });
 window.addEventListener('offline', () => { S.offline = true; schedule(); });
 
 /* ---------------- data ---------------- */
-function stop() { roleSubsOn = false; unsubs.forEach(u => { try { u(); } catch (e) { } }); unsubs = []; Object.assign(S, { dishes: {}, items: {}, menus: {}, shortages: [], purchases: [], photos: {}, members: [], queue: [], msgs: [], myMsgs: [], loaded: {}, house: null }); genDone = false; }
+function stop() { roleSubsOn = false; for (const k in migDone) delete migDone[k]; unsubs.forEach(u => { try { u(); } catch (e) { } }); unsubs = []; Object.assign(S, { dishes: {}, items: {}, menus: {}, shortages: [], purchases: [], photos: {}, members: [], queue: [], msgs: [], myMsgs: [], loaded: {}, house: null }); genDone = false; }
 function sub(ref, key, fn, onErr) { unsubs.push(onSnapshot(ref, snap => { fn(snap); S.loaded[key] = true; if (key === 'dishes' || key === 'menu' || key === 'house') maybeGenerate(); schedule(); }, err => { console.warn(key, err); if (onErr) onErr(err); S.loaded[key] = true; schedule(); })); }
 function start(hid) {
   stop(); S.hid = hid; S.view = 'app'; render();
@@ -711,8 +712,8 @@ function attachRoleSubs() {
   if (roleSubsOn) return; roleSubsOn = true;
   const r = S.role;
   sub(H(), 'house', s => { S.house = s.exists() ? s.data() : null; });
-  sub(HC('dishes'), 'dishes', s => { const o = {}; s.forEach(d => { o[d.id] = Object.assign({ id: d.id }, d.data()); }); S.dishes = o; });
-  sub(HC('items'), 'items', s => { const o = {}; s.forEach(d => { o[d.id] = Object.assign({ id: d.id }, d.data()); }); S.items = o; });
+  sub(HC('dishes'), 'dishes', s => { const o = {}; s.forEach(d => { o[d.id] = Object.assign({ id: d.id }, d.data()); }); S.dishes = o; migrateNames('dishes', DISHES, o); });
+  sub(HC('items'), 'items', s => { const o = {}; s.forEach(d => { o[d.id] = Object.assign({ id: d.id }, d.data()); }); S.items = o; migrateNames('items', ITEMS, o); });
   sub(query(HC('menu'), where('date', '>=', addDays(today(), -60))), 'menu', s => { const o = {}; s.forEach(d => { o[d.id] = Object.assign({}, d.data(), { date: d.id }); }); S.menus = o; });
   sub(HC('dishPhotos'), 'photos', s => { const o = {}; s.forEach(d => { o[d.id] = d.data().data; }); S.photos = o; });
   if (r !== 'family') sub(HC('shortages'), 'shortages', s => { S.shortages = s.docs.map(d => Object.assign({ id: d.id }, d.data())).sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0)); });
@@ -741,7 +742,7 @@ onAuthStateChanged(auth, async u => {
 });
 if ('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js').then(r => { document.addEventListener('visibilitychange', () => { if (!document.hidden) r.update().catch(() => { }); }); }).catch(() => { });
 /* --- update check: compare baked version with version.json --- */
-const APP_V = '10';
+const APP_V = '11';
 let updShown = false;
 function checkUpdate() {
   if (updShown) return;
@@ -757,6 +758,15 @@ function checkUpdate() {
 setTimeout(checkUpdate, 1500);
 setInterval(checkUpdate, 10 * 60 * 1000);
 document.addEventListener('visibilitychange', () => { if (!document.hidden) checkUpdate(); });
+
+/* --- fill new-language names (e.g. Telugu) into existing households, admin only, once per session --- */
+const migDone = {};
+function migrateNames(coll, seed, cur) {
+  if (S.role !== 'admin' || migDone[coll] || !Object.keys(cur).length) return; migDone[coll] = true;
+  const b = writeBatch(db); let n = 0;
+  seed.forEach(x => { const c = cur[x.id]; if (c && !c.name_te && x.name_te) { b.update(H(coll, x.id), { name_te: x.name_te }); n++; } });
+  if (n) b.commit().catch(() => { migDone[coll] = false; });
+}
 
 /* --- details open state survives re-render --- */
 document.addEventListener('toggle', e => { const d = e.target; if (d && d.dataset && d.dataset.dk) { if (d.open) OPEN_D.add(d.dataset.dk); else OPEN_D.delete(d.dataset.dk); } }, true);
