@@ -39,7 +39,7 @@ const SV = {
 const S = {
   uid: null, hid: null, role: null, lang: null, house: null,
   dishes: {}, items: {}, menus: {}, shortages: [], purchases: [], photos: {}, subs: [], members: [], queue: [], msgs: [], myMsgs: [],
-  loaded: {}, view: 'login', tab: 'today', adminTab: 'menu', libTab: 'dishes', month: null, offline: !navigator.onLine
+  loaded: {}, sq: {}, depth: 0, dayView: 'list', calMonth: null, view: 'login', tab: 'today', adminTab: 'menu', libTab: 'dishes', month: null, offline: !navigator.onLine
 };
 let M = null, pending = false, confirmKey = null, unsubs = [], genDone = false, genRunning = false;
 const $app = document.getElementById('app'), $modal = document.getElementById('modal'), $sheet = document.getElementById('sheet');
@@ -84,6 +84,7 @@ function render() {
   else if (S.view === 'create') h = createView();
   else h = shell();
   $app.innerHTML = h;
+  applySearch();
 }
 function langChips(cur) {
   return `<div class="chips">${['ar', 'hi', 'bn', 'fil', 'en'].map(k => `<button class="chip ${cur === k ? 'on' : ''}" data-act="setLang" data-v="${k}">${LANGS[k].label}</button>`).join('')}</div>`;
@@ -123,7 +124,7 @@ function shell() {
   else body = adminView();
   const nav = r === 'cook' ? `<nav class="nav"><div class="in">${[['today', 'tabToday'], ['list', 'tabList'], ['week', 'tabWeek']].map(([k, lab]) => `<button class="${S.tab === k ? 'on' : ''}" data-act="tab" data-v="${k}">${SV[k]}${esc(t(lab))}${k === 'list' && S.shortages.length ? ` (${S.shortages.length})` : ''}</button>`).join('')}</div></nav>` : '';
   return `<header class="top"><div class="topin">
-    <div class="brand"><div class="logo">${ICON}</div><div style="min-width:0"><div class="ttl">${esc((S.house && S.house.name) || t('title'))}</div><div class="sub">${esc(wdName(today()))} · ${esc(fmt(today(), { day: 'numeric', month: 'long' }))}</div></div></div>
+    <div class="brand">${S.depth > 0 ? `<button class="backbtn" data-act="goBack" aria-label="${esc(t('back'))}">${LANGS[l].dir === 'rtl' ? '→' : '←'}</button>` : ''}<div class="logo">${ICON}</div><div style="min-width:0"><div class="ttl">${esc((S.house && S.house.name) || t('title'))}</div><div class="sub">${esc(wdName(today()))} · ${esc(fmt(today(), { day: 'numeric', month: 'long' }))}</div></div></div>
     <div class="actions">${r !== 'admin' ? `<button class="pill" data-act="openMsgs" aria-label="${esc(t('messages'))}">💬${unreadReplies() ? ` <b style="color:var(--acc)">${unreadReplies()}</b>` : ''}</button><button class="pill" data-act="openLang">${esc(LANGS[l].label)}</button>` : ''}<button class="pill" data-act="openHelp" aria-label="${esc(HELP[l].t.help)}">?</button><button class="pill" data-act="openMe">${esc(t('r_' + r))}</button></div>
   </div>${S.offline ? `<div class="banner">${esc(t('offline'))}</div>` : ''}</header>
   <main class="wrap">${body}</main>${nav}`;
@@ -175,20 +176,52 @@ function weekList(start, n, admin) {
     else { const li = menuItems(m); const main = li.filter(x => x[0] === 'main' || x[0] === 'rice').map(x => split(nm(x[1]))[0]); const rest = li.filter(x => x[0] !== 'main' && x[0] !== 'rice').map(x => split(nm(x[1]))[0]); txt = `<div class="nm" style="font-size:15px">${esc(main.join(' + ') || '—')}</div>${rest.length ? `<div class="meta">${esc(rest.join(' · '))}</div>` : ''}`; }
     const first = m && !m.off && menuItems(m)[0];
     const badges = admin && m ? `<div style="margin-top:4px;display:flex;gap:4px;flex-wrap:wrap">${m.auto ? '<span class="badge gray">تلقائي</span>' : '<span class="badge">مُعدّل</span>'}${m.seen ? '<span class="badge ok">✓ استلم الطباخ</span>' : ''}${(m.note || (m.notes || []).length) ? '<span class="badge gray">📝</span>' : ''}</div>` : '';
-    h += `<div class="row"${admin ? ` data-act="editDay" data-v="${d}" style="cursor:pointer"` : ''}><div class="wd"><b>${esc(wdName(d))}</b><span>${esc(fmt(d, { day: 'numeric', month: 'short' }))}</span></div>${first ? thumb(first[1]) : ''}<div class="grow">${txt}${badges}</div></div>`;
+    h += `<div class="row" data-act="${admin ? 'editDay' : 'dayInfo'}" data-v="${d}" style="cursor:pointer"><div class="wd"><b>${esc(wdName(d))}</b><span>${esc(fmt(d, { day: 'numeric', month: 'short' }))}</span></div>${first ? thumb(first[1]) : ''}<div class="grow">${txt}${badges}</div></div>`;
   }
   return `<div class="card flat" style="padding:2px 14px">${h}</div>`;
 }
 
+
+/* --- day views: list / cards / calendar --- */
+function viewToggle() { return `<div class="vtog">${[['list', 'vList'], ['cards', 'vCards'], ['cal', 'vCal']].map(([k, l]) => `<button class="${S.dayView === k ? 'on' : ''}" data-act="dayView" data-v="${k}">${esc(t(l))}</button>`).join('')}</div>`; }
+function dayMain(m) { if (!m) return null; if (m.off) return '🚫'; const li = menuItems(m); const main = li.filter(x => x[0] === 'main' || x[0] === 'rice').map(x => split(nm(x[1]))[0]); return main.join(' + ') || (li[0] ? split(nm(li[0][1]))[0] : null); }
+function daysView(start, n, admin) {
+  const act = admin ? 'editDay' : 'dayInfo';
+  if (S.dayView === 'cards') {
+    let h = '';
+    for (let i = 0; i < n; i++) {
+      const d = addDays(start, i), m = S.menus[d], li = m && !m.off ? menuItems(m) : [], first = li[0] && li[0][1], src = first && photoSrc(first);
+      const rest = li.filter(x => x[0] !== 'main' && x[0] !== 'rice').map(x => split(nm(x[1]))[0]);
+      h += `<button class="dcard ${d === today() ? 'today' : ''}" data-act="${act}" data-v="${d}">${src ? `<img src="${esc(src)}" alt="" loading="lazy">` : `<div class="ph"><span class="emo">${esc(m && m.off ? '🚫' : (first && first.emoji) || '🍽️')}</span></div>`}<div class="in"><div class="d">${esc(wdName(d))} · ${esc(fmt(d, { day: 'numeric', month: 'short' }))}</div><div class="nm" style="font-size:15px">${esc(m ? (m.off ? t('noLunch') : dayMain(m) || '—') : t('noMenu'))}</div>${rest.length ? `<div class="meta">${esc(rest.join(' · '))}</div>` : ''}${admin && m ? `<div style="margin-top:4px">${m.auto ? '<span class="badge gray">تلقائي</span>' : '<span class="badge">مُعدّل</span>'}${m.seen ? ' <span class="badge ok">✓</span>' : ''}</div>` : ''}</div></button>`;
+    }
+    return `<div class="dcards">${h}</div>`;
+  }
+  if (S.dayView === 'cal') {
+    const month = S.calMonth || monthOf(start), first = pd(month + '-01'), lead = first.getDay();
+    const dim = new Date(first.getFullYear(), first.getMonth() + 1, 0).getDate();
+    let h = `<div class="cal"><div class="calh"><button class="icon" data-act="calNav" data-v="-1" aria-label="prev">${LANGS[L()].dir === 'rtl' ? '›' : '‹'}</button><b>${esc(pd(month + '-01').toLocaleDateString(LANGS[L()].loc, { month: 'long', year: 'numeric' }))}</b><button class="icon" data-act="calNav" data-v="1" aria-label="next">${LANGS[L()].dir === 'rtl' ? '‹' : '›'}</button></div><div class="calg">`;
+    for (let i = 0; i < 7; i++) { const d = addDays('2023-01-01', i); h += `<div class="wd">${esc(L() === 'ar' ? WD_AR[i].replace('ال', '').slice(0, 3) : fmt(d, { weekday: 'short' }))}</div>`; }
+    for (let i = 0; i < lead; i++) h += `<div class="cell empty"></div>`;
+    for (let k = 1; k <= dim; k++) {
+      const d = month + '-' + pad(k), m = S.menus[d], cls = [d === today() ? 'today' : '', d < today() ? 'past' : '', m && m.off ? 'off' : ''].join(' ');
+      h += `<button class="cell ${cls}" data-act="${act}" data-v="${d}"><span class="n">${k}</span><span class="m">${esc(dayMain(m) || '')}</span></button>`;
+    }
+    return h + `</div></div>`;
+  }
+  return weekList(start, n, admin);
+}
+function applySearch() { document.querySelectorAll('input[data-search]').forEach(inp => { const g = inp.dataset.search, q = (S.sq[g] || '').trim().toLowerCase(); if (inp.value !== (S.sq[g] || '')) inp.value = S.sq[g] || ''; document.querySelectorAll(`[data-sg="${g}"]`).forEach(el => { el.style.display = !q || (el.dataset.key || '').includes(q) ? '' : 'none'; }); }); }
+const searchBox = (g, ph) => `<input class="searchbox" data-search="${g}" placeholder="🔍 ${esc(ph)}" autocomplete="off">`;
+const keyOf = o => esc([o.name_ar, o.name_en, o.name_hi, o.name_bn, o.name_fil, o.custom].filter(Boolean).join(' ').toLowerCase());
 /* ---------------- views ---------------- */
 function familyView() {
   const td = today();
-  return `<h1 class="page">${esc(t('today'))}</h1>` + heroMenu(td) + `<div class="sec"><h2>${esc(t('tomorrow'))}</h2></div>` + weekList(addDays(td, 1), 1) + `<div class="sec"><h2>${esc(t('thisWeek'))}</h2></div>` + weekList(addDays(td, 2), 6);
+  return `<h1 class="page">${esc(t('today'))}</h1>` + heroMenu(td) + `<div class="sec"><h2>${esc(t('tomorrow'))}</h2></div>` + weekList(addDays(td, 1), 1) + `<div class="sec"><h2>${esc(t('thisWeek'))}</h2>${viewToggle()}</div>` + daysView(addDays(td, 2), 12);
 }
 function cookView() {
   const td = today();
   if (S.tab === 'list') return `<div class="sec"><h2>${esc(t('shortages'))}</h2><button class="sm" data-act="addShort">+ ${esc(t('addMissing'))}</button></div>` + shortList('cook');
-  if (S.tab === 'week') return `<div class="sec"><h2>${esc(t('tomorrow'))}</h2><span class="badge">${esc(t('prep'))}</span></div>` + heroMenu(addDays(td, 1)) + `<div class="sec"><h2>${esc(t('thisWeek'))}</h2></div>` + weekList(addDays(td, 2), 6);
+  if (S.tab === 'week') return `<div class="sec"><h2>${esc(t('tomorrow'))}</h2><span class="badge">${esc(t('prep'))}</span></div>` + heroMenu(addDays(td, 1)) + `<div class="sec"><h2>${esc(t('thisWeek'))}</h2>${viewToggle()}</div>` + daysView(addDays(td, 2), 12);
   return `<h1 class="page">${esc(t('today'))}</h1>` + heroMenu(td, { cook: true }) + `<div class="card flat" style="display:flex;align-items:center;justify-content:space-between;gap:8px"><span class="nm">${esc(t('shortages'))} · ${S.shortages.length}</span><button class="sm soft" data-act="addShort">+ ${esc(t('addMissing'))}</button></div>`;
 }
 function shortRow(s, mode) {
@@ -196,7 +229,7 @@ function shortRow(s, mode) {
   let act = '';
   if (mode === 'driver' || mode === 'admin') act += `<button class="sm" data-act="buy" data-id="${s.id}">${esc(t('markBought'))}</button>`;
   if (mode === 'cook' || mode === 'admin') act += `<button class="icon" data-act="delShort" data-id="${s.id}" aria-label="${esc(t('del'))}">✕</button>`;
-  return `<div class="row"><div class="thumb ph"><span class="emo">${esc(o.emoji || '🛒')}</span></div><div class="grow"><div class="nm">${esc(nm(o))}</div><div class="meta">${esc(s.qty)} ${esc(unitL(s.unit))}${L() !== 'ar' && !s.custom ? ' · ' + esc(o.name_ar || '') : ''}${s.note ? ' · ' + esc(s.note) : ''}</div></div>${act}</div>`;
+  return `<div class="row" data-sg="short" data-key="${keyOf(o)}"><div class="thumb ph"><span class="emo">${esc(o.emoji || '🛒')}</span></div><div class="grow"><div class="nm">${esc(nm(o))}</div><div class="meta">${esc(s.qty)} ${esc(unitL(s.unit))}${L() !== 'ar' && !s.custom ? ' · ' + esc(o.name_ar || '') : ''}${s.note ? ' · ' + esc(s.note) : ''}</div></div>${act}</div>`;
 }
 function shortList(mode) {
   if (!S.shortages.length) return `<div class="card empty">${esc(t('nothingToBuy'))}</div>`;
@@ -206,6 +239,7 @@ const storeL = s => (s === 'coop' ? t('coop') : s === 'supermarket' ? t('superma
 function driverView() {
   const tp = S.purchases.filter(p => p.date === today()); const tot = tp.reduce((a, p) => a + (Number(p.price) || 0), 0);
   let h = `<div class="summary"><div style="display:flex;align-items:baseline;gap:8px"><span class="big-n">${S.shortages.length}</span><span>${esc(t('toBuy'))}</span></div>${S.shortages.length ? `<button class="sm" data-act="shareList">${esc(t('share'))}</button>` : ''}</div>`;
+  if (S.shortages.length > 6) h += searchBox('short', t('search'));
   h += shortList('driver') + `<button class="ghost block" data-act="extraBuy">+ ${esc(t('extraPurchase'))}</button>`;
   h += `<div class="sec"><h2>${esc(t('boughtToday'))}</h2>${tp.length ? `<span class="badge">${esc(t('total'))}: ${money(tot)} ${esc(t('kwd'))}</span>` : ''}</div>`;
   h += tp.length ? `<div class="card flat" style="padding:2px 14px">${tp.map(p => { const o = (p.itemId && S.items[p.itemId]) || p; return `<div class="row"><div class="thumb ph"><span class="emo">${esc(o.emoji || '🛒')}</span></div><div class="grow"><div class="nm">${esc(nm(o))}</div><div class="meta">${esc(p.qty)} ${esc(unitL(p.unit))} · ${esc(storeL(p.store))}</div></div><b>${money(p.price)}</b></div>`; }).join('')}</div>` : `<div class="card empty">—</div>`;
@@ -226,7 +260,9 @@ function adminView() {
 }
 function adminMenu() {
   const st = settings(), td = today();
-  return `<h1 class="page">غداء اليوم</h1>` + heroMenu(td) + `<div class="sec"><h2>الأيام القادمة</h2><button class="sm soft" data-act="regen">${confirmKey === 'regen' ? 'اضغط للتأكيد' : '🔀 إعادة توليد'}</button></div><p class="small mute" style="margin:0 2px">اضغط على أي يوم لتعديله أو إضافة ملاحظة للطباخ.</p>` + weekList(td, st.horizon, true);
+  const spend = S.purchases.filter(p => p.month === monthOf(td)).reduce((a, p) => a + (Number(p.price) || 0), 0), nm2 = newMsgs();
+  const stats = `<div class="stats"><button class="scard ${S.shortages.length ? 'hot' : ''}" data-act="atab" data-v="short"><b>${S.shortages.length}</b><span>نواقص مطلوبة</span></button><button class="scard ${nm2 ? 'hot' : ''}" data-act="atab" data-v="inbox"><b>${nm2}</b><span>طلبات ورسائل جديدة</span></button><button class="scard" data-act="atab" data-v="report"><b dir="ltr">${money(spend)}</b><span>مصروف هذا الشهر (د.ك)</span></button><button class="scard ${S.queue.length ? 'hot' : ''}" data-act="goPhotos"><b>${S.queue.length}</b><span>صور بانتظار اعتمادك</span></button></div>`;
+  return stats + `<div class="sec"><h2>غداء اليوم</h2>${S.menus[td] && !S.menus[td].off ? (S.menus[td].seen ? '<span class="badge ok">✓ استلم الطباخ</span>' : '<span class="badge gray">لم يستلم الطباخ بعد</span>') : ''}</div>` + heroMenu(td).replace(/<div><span class="badge ok">.*?<\/span><\/div>$/, '') + `<div class="sec"><h2>الأيام القادمة</h2>${viewToggle()}</div><div style="display:flex;justify-content:space-between;align-items:center;gap:8px"><p class="small mute" style="margin:0 2px">اضغط أي يوم لتعديله أو إضافة ملاحظة.</p><button class="sm soft" data-act="regen">${confirmKey === 'regen' ? 'اضغط للتأكيد' : '🔀 إعادة توليد'}</button></div>` + daysView(S.dayView === 'cal' ? td : addDays(td, 1), st.horizon - 1, true);
 }
 function adminLib() {
   let h = `<div class="seg" style="grid-template-columns:repeat(3,1fr)">${[['dishes', 'الأطباق'], ['items', 'السلع'], ['photos', 'صور بانتظارك' + (S.queue.length ? ` (${S.queue.length})` : '')]].map(([k, l]) => `<button class="${S.libTab === k ? 'on' : ''}" data-act="ltab" data-v="${k}">${l}</button>`).join('')}</div>`;
@@ -236,13 +272,13 @@ function adminLib() {
   }
   if (S.libTab === 'items') {
     const all = Object.values(S.items).sort((a, b) => (a.name_ar || '').localeCompare(b.name_ar || '', 'ar'));
-    return h + `<div class="sec"><h2>السلع (${all.length})</h2><button class="sm" data-act="item">+ سلعة</button></div><div class="card flat" style="padding:2px 14px">${all.map(i => `<div class="row" data-act="item" data-id="${i.id}" style="cursor:pointer"><div class="thumb ph"><span class="emo">${esc(i.emoji || '🛒')}</span></div><div class="grow"><div class="nm">${esc(i.name_ar)}</div><div class="meta">${esc(unitL(i.unit))} · ${esc(i.name_hi || '')}</div></div></div>`).join('')}</div>`;
+    return h + `<div class="sec"><h2>السلع (${all.length})</h2><button class="sm" data-act="item">+ سلعة</button></div>${searchBox('items', 'ابحث عن سلعة')}<div class="card flat" style="padding:2px 14px">${all.map(i => `<div class="row" data-act="item" data-id="${i.id}" data-sg="items" data-key="${keyOf(i)}" style="cursor:pointer"><div class="thumb ph"><span class="emo">${esc(i.emoji || '🛒')}</span></div><div class="grow"><div class="nm">${esc(i.name_ar)}</div><div class="meta">${esc(unitL(i.unit))} · ${esc(i.name_hi || '')}</div></div></div>`).join('')}</div>`;
   }
   const all = Object.values(S.dishes);
-  h += `<div class="sec"><h2>الأطباق (${all.length})</h2><button class="sm" data-act="dish">+ طبق</button></div>`;
+  h += `<div class="sec"><h2>الأطباق (${all.length})</h2><button class="sm" data-act="dish">+ طبق</button></div>` + searchBox('dishes', 'ابحث عن طبق');
   CATS.forEach(c => {
     const ds = all.filter(d => d.cat === c).sort((a, b) => (a.name_ar || '').localeCompare(b.name_ar || '', 'ar')); if (!ds.length) return;
-    h += `<div class="lbl" style="margin:16px 4px 0">${esc(t('c_' + c))} (${ds.length})</div><div class="card flat" style="padding:2px 14px">` + ds.map(d => `<div class="row ${d.active === false ? 'off' : ''}">${thumb(d)}<div class="grow" data-act="dish" data-id="${d.id}" style="cursor:pointer"><div class="nm">${esc(d.name_ar)}</div><div class="meta">${S.photos[d.id] ? '📷 صورتكم' : d.photo ? 'صورة مرجعية' : 'بدون صورة'}${d.pair === 'rice' ? ' · مع عيش' : ''}</div></div><button class="sm ${d.active === false ? 'soft' : 'ghost'}" data-act="toggleDish" data-id="${d.id}">${d.active === false ? 'تفعيل' : 'إيقاف'}</button></div>`).join('') + `</div>`;
+    h += `<div class="lbl" style="margin:16px 4px 0">${esc(t('c_' + c))} (${ds.length})</div><div class="card flat" style="padding:2px 14px">` + ds.map(d => `<div class="row ${d.active === false ? 'off' : ''}" data-sg="dishes" data-key="${keyOf(d)}">${thumb(d)}<div class="grow" data-act="dish" data-id="${d.id}" style="cursor:pointer"><div class="nm">${esc(d.name_ar)}</div><div class="meta">${S.photos[d.id] ? '📷 صورتكم' : d.photo ? 'صورة مرجعية' : 'بدون صورة'}${d.pair === 'rice' ? ' · مع عيش' : ''}</div></div><button class="sm ${d.active === false ? 'soft' : 'ghost'}" data-act="toggleDish" data-id="${d.id}">${d.active === false ? 'تفعيل' : 'إيقاف'}</button></div>`).join('') + `</div>`;
   });
   return h;
 }
@@ -313,15 +349,19 @@ function adminReport() {
     rows.push({ p: last, times: gm.length, qty: sum(gm, 'qty'), spend: sum(gm, 'price'), mAvg, allAvg, lastU, every, flag: g.length >= 3 && lastU > allAvg * 1.2, unit: last.unit });
   });
   rows.sort((a, b) => b.spend - a.spend);
-  h += `<div class="sec"><h2>حسب السلعة</h2></div>`;
-  h += rows.length ? `<div class="card flat" style="padding:2px 14px">${rows.map(r => { const o = (r.p.itemId && S.items[r.p.itemId]) || r.p, u = unitL(r.unit); return `<div class="row" style="align-items:flex-start"><div class="grow"><div style="display:flex;justify-content:space-between;gap:8px"><span class="nm">${esc(o.emoji || '')} ${esc(nm(o, 'ar'))}</span><b>${money(r.spend)}</b></div><div class="meta">${r.times} مرات · ${+r.qty.toFixed(2)} ${esc(u)}${r.every ? ` · كل ~${Math.round(r.every)} يوم` : ''}</div><div class="meta">سعر ${esc(u)}: هذا الشهر ${money(r.mAvg)} · المعدل ${money(r.allAvg)}</div>${r.flag ? `<div style="margin-top:4px"><span class="badge warn">آخر سعر ${money(r.lastU)} أعلى من المعدل بأكثر من 20%</span></div>` : ''}</div></div>`; }).join('')}</div>` : `<div class="card empty">لا توجد مشتريات في هذا الشهر</div>`;
+  h += `<div class="sec"><h2>حسب السلعة</h2></div>` + (rows.length > 4 ? searchBox('report', 'ابحث عن سلعة') : '');
+  h += rows.length ? `<div class="card flat" style="padding:2px 14px">${rows.map(r => { const o = (r.p.itemId && S.items[r.p.itemId]) || r.p, u = unitL(r.unit); return `<div class="row" style="align-items:flex-start" data-sg="report" data-key="${keyOf(o)}"><div class="grow"><div style="display:flex;justify-content:space-between;gap:8px"><span class="nm">${esc(o.emoji || '')} ${esc(nm(o, 'ar'))}</span><b>${money(r.spend)}</b></div><div class="meta">${r.times} مرات · ${+r.qty.toFixed(2)} ${esc(u)}${r.every ? ` · كل ~${Math.round(r.every)} يوم` : ''}</div><div class="meta">سعر ${esc(u)}: هذا الشهر ${money(r.mAvg)} · المعدل ${money(r.allAvg)}</div>${r.flag ? `<div style="margin-top:4px"><span class="badge warn">آخر سعر ${money(r.lastU)} أعلى من المعدل بأكثر من 20%</span></div>` : ''}</div></div>`; }).join('')}</div>` : `<div class="card empty">لا توجد مشتريات في هذا الشهر</div>`;
   if (inM.length) h += `<div class="card flat"><details><summary>كل عمليات الشراء (${inM.length})</summary>${inM.slice().sort((a, b) => (b.ts || 0) - (a.ts || 0)).map(p => { const o = (p.itemId && S.items[p.itemId]) || p; return `<div class="row"><div class="grow"><div class="nm" style="font-size:15px">${esc(nm(o, 'ar'))}</div><div class="meta">${esc(p.date)} · ${esc(p.qty)} ${esc(unitL(p.unit))} · ${esc(storeL(p.store))}</div></div><b>${money(p.price)}</b><button class="icon" data-act="delPurchase" data-id="${p.id}">${confirmKey === 'p' + p.id ? 'تأكيد؟' : '✕'}</button></div>`; }).join('')}</details></div>`;
   return h;
 }
 
 /* ---------------- modals ---------------- */
-function openModal(m) { M = m; renderModal(); $modal.classList.remove('hidden'); }
-function closeModal() { M = null; $modal.classList.add('hidden'); $sheet.innerHTML = ''; if (pending) render(); }
+const snap = () => ({ tab: S.tab, adminTab: S.adminTab, libTab: S.libTab, calMonth: S.calMonth });
+function navTo(ch) { try { history.replaceState({ nav: snap(), depth: S.depth }, ''); } catch (e) { } Object.assign(S, ch); S.depth++; try { history.pushState({ nav: snap(), depth: S.depth }, ''); } catch (e) { } confirmKey = null; render(); window.scrollTo(0, 0); }
+function openModal(m) { const was = !!M; M = m; renderModal(); $modal.classList.remove('hidden'); if (!was) { try { history.pushState({ modal: 1, nav: snap(), depth: S.depth }, ''); } catch (e) { } } }
+function hideModal() { M = null; $modal.classList.add('hidden'); $sheet.innerHTML = ''; if (pending) render(); }
+function closeModal() { hideModal(); try { if (history.state && history.state.modal) history.replaceState({ nav: snap(), depth: S.depth }, ''); } catch (e) { } }
+window.addEventListener('popstate', e => { if (M) { hideModal(); return; } const st = e.state; if (st && st.nav) { Object.assign(S, st.nav); S.depth = st.depth || 0; confirmKey = null; render(); } });
 function syncModal() { if (!M) return; $sheet.querySelectorAll('[data-m]').forEach(el => { M[el.dataset.m] = el.type === 'checkbox' ? el.checked : el.value; }); }
 function renderModal() {
   if (!M) return; $sheet.setAttribute('dir', LANGS[L()].dir);
@@ -334,6 +374,7 @@ function renderModal() {
   else if (M.type === 'dish') h += modalDish();
   else if (M.type === 'item') h += modalItem();
   else if (M.type === 'help') h += modalHelp();
+  else if (M.type === 'dayInfo') h += `<h3>${esc(wdName(M.date))} · ${esc(fmt(M.date, { day: 'numeric', month: 'long' }))}</h3>` + heroMenu(M.date);
   else if (M.type === 'msgs') h += modalMsgs();
   else if (M.type === 'compose') h += modalCompose();
   else if (M.type === 'reply') h += `<h3>رد على الرسالة</h3><div class="field"><textarea data-m="reply" placeholder="يظهر للمرسل مع زر ترجمة">${esc(M.reply || '')}</textarea></div>`;
@@ -486,9 +527,14 @@ const ACT = {
     confirmKey = null; try { await deleteDoc(H('members', S.uid)); } catch (e) { }
     stop(); ls('hid', null); S.hid = null; S.role = null; closeModal(); S.view = 'login'; render();
   },
-  tab(v) { S.tab = v; render(); window.scrollTo(0, 0); },
-  atab(v) { S.adminTab = v; confirmKey = null; render(); window.scrollTo(0, 0); },
-  ltab(v) { S.libTab = v; render(); },
+  tab(v) { if (S.tab !== v) navTo({ tab: v }); },
+  atab(v) { if (S.adminTab !== v) navTo({ adminTab: v }); },
+  ltab(v) { if (S.libTab !== v) navTo({ libTab: v }); },
+  goPhotos() { navTo({ adminTab: 'lib', libTab: 'photos' }); },
+  goBack() { history.back(); },
+  dayView(v) { S.dayView = v; ls('dayView', v); render(); },
+  calNav(v) { const m = S.calMonth || monthOf(today()); const d = pd(m + '-01'); d.setMonth(d.getMonth() + (+v)); S.calMonth = d.getFullYear() + '-' + pad(d.getMonth() + 1); render(); },
+  dayInfo(v) { openModal({ type: 'dayInfo', date: v }); },
   month(v) { S.month = v; render(); },
   async seen(v) { await updateDoc(H('menu', v), { seen: { at: Date.now(), by: S.role } }); toast('✓'); },
   async photo(dishId) {
@@ -625,7 +671,7 @@ document.addEventListener('click', async e => {
   const fn = ACT[el.dataset.act]; if (!fn) return;
   try { await fn(el.dataset.v, el.dataset.id, el); } catch (err) { console.error(err); toast(errMsg(err)); }
 });
-document.addEventListener('input', e => { if (e.target.hasAttribute('data-filter')) { const q = e.target.value.trim().toLowerCase(); if (M) M.q = e.target.value; document.querySelectorAll('#grid .tile[data-key]').forEach(b => { b.style.display = !q || b.dataset.key.includes(q) ? '' : 'none'; }); } });
+document.addEventListener('input', e => { if (e.target.hasAttribute('data-search')) { S.sq[e.target.dataset.search] = e.target.value; applySearch(); return; } if (e.target.hasAttribute('data-filter')) { const q = e.target.value.trim().toLowerCase(); if (M) M.q = e.target.value; document.querySelectorAll('#grid .tile[data-key]').forEach(b => { b.style.display = !q || b.dataset.key.includes(q) ? '' : 'none'; }); } });
 document.addEventListener('keydown', e => { if (e.key === 'Enter' && e.target.id === 'pin') document.querySelector('[data-act="login"]').click(); });
 document.addEventListener('focusout', () => setTimeout(() => { if (pending && !isTyping()) render(); }, 60));
 window.addEventListener('online', () => { S.offline = false; schedule(); });
@@ -662,8 +708,14 @@ function attachRoleSubs() {
   }
 }
 
+/* ---------------- back to top ---------------- */
+const $top = document.createElement('button'); $top.className = 'totop'; $top.textContent = '↑'; $top.setAttribute('aria-label', 'top'); document.body.appendChild($top);
+$top.addEventListener('click', () => window.scrollTo({ top: 0, behavior: 'smooth' }));
+window.addEventListener('scroll', () => { $top.classList.toggle('show', window.scrollY > 500); }, { passive: true });
+
 /* ---------------- boot ---------------- */
-S.lang = ls('lang'); S.view = 'boot'; render();
+S.lang = ls('lang'); S.dayView = ls('dayView') || 'list'; S.view = 'boot'; render();
+try { history.replaceState({ nav: snap(), depth: 0 }, ''); } catch (e) { }
 onAuthStateChanged(auth, async u => {
   if (!u) { try { await signInAnonymously(auth); } catch (e) { $app.innerHTML = `<div class="login"><p class="center">${esc(e.message)}</p></div>`; } return; }
   S.uid = u.uid;

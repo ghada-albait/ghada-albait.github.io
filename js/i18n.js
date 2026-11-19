@@ -101,7 +101,11 @@ export const I18N = {
 "noMsgs": "لا توجد رسائل",
 "msgSent": "تم الإرسال",
 "chooseDish": "اختر الطبق",
-"optionalNote": "ملاحظة (اختياري)"
+"optionalNote": "ملاحظة (اختياري)",
+"vList": "قائمة",
+"vCards": "بطاقات",
+"vCal": "رزنامة",
+"toTop": "للأعلى"
 },
 "en": {
 "title": "Home Lunch",
@@ -204,7 +208,11 @@ export const I18N = {
 "noMsgs": "No messages",
 "msgSent": "Sent",
 "chooseDish": "Choose the dish",
-"optionalNote": "Note (optional)"
+"optionalNote": "Note (optional)",
+"vList": "List",
+"vCards": "Cards",
+"vCal": "Calendar",
+"toTop": "To top"
 },
 "hi": {
 "title": "घर का खाना",
@@ -307,7 +315,11 @@ export const I18N = {
 "noMsgs": "कोई संदेश नहीं",
 "msgSent": "भेज दिया",
 "chooseDish": "डिश चुनें",
-"optionalNote": "नोट (वैकल्पिक)"
+"optionalNote": "नोट (वैकल्पिक)",
+"vList": "सूची",
+"vCards": "कार्ड",
+"vCal": "कैलेंडर",
+"toTop": "ऊपर"
 },
 "bn": {
 "title": "বাড়ির খাবার",
@@ -410,7 +422,11 @@ export const I18N = {
 "noMsgs": "কোনো বার্তা নেই",
 "msgSent": "পাঠানো হয়েছে",
 "chooseDish": "খাবার বেছে নিন",
-"optionalNote": "নোট (ঐচ্ছিক)"
+"optionalNote": "নোট (ঐচ্ছিক)",
+"vList": "তালিকা",
+"vCards": "কার্ড",
+"vCal": "ক্যালেন্ডার",
+"toTop": "উপরে"
 },
 "fil": {
 "title": "Tanghalian sa Bahay",
@@ -513,7 +529,11 @@ export const I18N = {
 "noMsgs": "Walang mensahe",
 "msgSent": "Naipadala",
 "chooseDish": "Piliin ang ulam",
-"optionalNote": "Paalala (opsyonal)"
+"optionalNote": "Paalala (opsyonal)",
+"vList": "Listahan",
+"vCards": "Mga card",
+"vCal": "Kalendaryo",
+"toTop": "Itaas"
 }
 };
 export const QUICK_NOTES = {
